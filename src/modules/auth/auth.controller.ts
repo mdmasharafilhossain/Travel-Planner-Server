@@ -11,8 +11,10 @@ export async function register(req: Request, res: Response) {
     res.cookie(process.env.COOKIE_NAME || "tb_access", token, cookieOptions);
     res.json({ success: true, user });
   } catch (err: any) {
-    res.status(err.statusCode || 500).json({ ok: false, message: err.message || "Registration failed" });
+    console.log(err);
+    res.status(err.statusCode || 500).json({ success: false, message: err.message || "Registration failed" });
   }
+  
 }
 
 export async function login(req: Request, res: Response) {
@@ -20,9 +22,9 @@ export async function login(req: Request, res: Response) {
     const { email, password } = req.body;
     const { user, token } = await authService.loginUser({ email, password });
     res.cookie(process.env.COOKIE_NAME || "tb_access", token, cookieOptions);
-    res.json({ success: true, user });
+    res.json({ success: true, user,token });
   } catch (err: any) {
-    res.status(err.statusCode || 500).json({ ok: false, message: err.message || "Login failed" });
+    res.status(err.statusCode || 500).json({ success: false, message: err.message || "Login failed" });
   }
 }
 
