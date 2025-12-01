@@ -1,0 +1,49 @@
+import { Request, Response } from "express";
+import * as userService from "./user.service";
+
+export async function getProfile(req: Request, res: Response) {
+  try {
+    const id = req.params.id;
+    const user = await userService.getUserById(id);
+    res.json({ ok: true, user });
+  } catch (err: any) {
+    res.status(err.statusCode || 500).json({ ok: false, message: err.message || "Failed" });
+  }
+}
+
+export async function updateProfile(req: Request, res: Response) {
+  try {
+    const id = req.params.id;
+    // authorization: only owner or admin should update - simple check:
+    if (req.user?.id !== id && req.user?.role !== "ADMIN") {
+      return res.status(403).json({ ok: false, message: "Forbidden" });
+    }
+    const updated = await userService.updateUser(id, req.body);
+    res.json({ ok: true, user: updated });
+  } catch (err: any) {
+    res.status(err.statusCode || 500).json({ ok: false, message: err.message || "Failed" });
+  }
+}
+
+export async function list(req: Request, res: Response) {
+  try {
+    const take = Number(req.query.take) || 20;
+    const skip = Number(req.query.skip) || 0;
+    const users = await userService.listUsers(take, skip);
+    res.json({ ok: true, users });
+  } catch (err: any) {
+    res.status(500).json({ ok: false, message: err.message || "Failed" });
+  }
+}
+
+export async function changePassword(req: Request, res: Response) {
+  try {
+    const id = req.params.id;
+    if (req.user?.id !== id) return res.status(403).json({ ok: false, message: "Forbidden" });
+    const { oldPassword, newPassword } = req.body;
+    const result = await userService.changePassword(id, oldPassword, newPassword);
+    res.json({ ok: true, ...result });
+  } catch (err: any) {
+    res.status(err.statusCode || 500).json({ ok: false, message: err.message || "Failed" });
+  }
+}
