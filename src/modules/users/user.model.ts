@@ -6,5 +6,22 @@ export const userModel = {
   findByEmail: (email: string) => prisma.user.findUnique({ where: { email } }),
   create: (data: any) => prisma.user.create({ data }),
   update: (id: string, data: any) => prisma.user.update({ where: { id }, data }),
-  list: (take = 20, skip = 0) => prisma.user.findMany({ take, skip })
+  list: (take = 20, skip = 0) => prisma.user.findMany({ take, skip }),
+  findByIdSafe: (id: string) =>
+    prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        bio: true,
+        profileImage: true,
+        travelInterests: true,
+        visitedCountries: true,
+        currentLocation: true,
+        role: true,
+        
+        
+      },
+    }),
 };

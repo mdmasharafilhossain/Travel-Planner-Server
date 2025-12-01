@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as userService from "./user.service";
+import { AuthRequest } from "../../middlewares/auth";
 
 export async function getProfile(req: Request, res: Response) {
   try {
@@ -45,5 +46,23 @@ export async function changePassword(req: Request, res: Response) {
     res.json({ success: true, ...result });
   } catch (err: any) {
     res.status(err.statusCode || 500).json({ success: false, message: err.message || "Failed" });
+  }
+}
+
+export async function getMe(req: AuthRequest, res: Response) {
+  try {
+    console.log("DEBUG /me - req.user:", req.user);
+
+    const userId = req.user?.id;
+    if (!userId) {
+      console.log("DEBUG /me - no user id in request");
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const user = await userService.getMe(userId);
+    return res.json({ success: true, user });
+  } catch (err: any) {
+    console.error("getMe error:", err);
+    return res.status(err.statusCode || 500).json({ success: false, message: err.message || "Failed" });
   }
 }
