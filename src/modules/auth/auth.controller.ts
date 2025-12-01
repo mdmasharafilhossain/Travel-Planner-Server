@@ -1,12 +1,13 @@
 import { Request, Response } from "express";
 import * as authService from "./auth.service";
 import { cookieOptions } from "../../utils/cookie";
+import { LoginInput, RegisterInput } from "./auth.schema";
 
 
 
 export async function register(req: Request, res: Response) {
   try {
-    const { email, password, fullName } = req.body;
+    const { email, password, fullName } = req.body as RegisterInput;
     const { user, token } = await authService.registerUser({ email, password, fullName });
     res.cookie(process.env.COOKIE_NAME || "tb_access", token, cookieOptions);
     res.json({ success: true, user });
@@ -19,7 +20,7 @@ export async function register(req: Request, res: Response) {
 
 export async function login(req: Request, res: Response) {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body as LoginInput;
     const { user, token } = await authService.loginUser({ email, password });
     res.cookie(process.env.COOKIE_NAME || "tb_access", token, cookieOptions);
     res.json({ success: true, user,token });
