@@ -35,13 +35,13 @@ export async function listPlans(req: Request, res: Response) {
 
 export async function match(req: Request, res: Response) {
   try {
-    const q = {
+    const FilterQuery = {
       destination: (req.query.destination as string) || undefined,
       startDate: (req.query.startDate as string) || undefined,
       endDate: (req.query.endDate as string) || undefined,
       travelType: (req.query.travelType as string) || undefined
     };
-    const matches = await travelService.matchPlans(q);
+    const matches = await travelService.matchPlans(FilterQuery);
     res.json({ success: true, matches });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message || "Failed" });
