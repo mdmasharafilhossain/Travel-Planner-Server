@@ -1,7 +1,6 @@
 import { prisma } from "../../config/db";
 import { AppError } from "../../utils/AppError";
 
-
 export async function createPlan(hostId: string, data: any) {
   const CreateNewPlan = await prisma.travelPlan.create({
     data: {
