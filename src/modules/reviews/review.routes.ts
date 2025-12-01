@@ -1,4 +1,3 @@
-// src/routes/review.routes.ts
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth";
 import * as reviewController from "../reviews/review.controller"; 
