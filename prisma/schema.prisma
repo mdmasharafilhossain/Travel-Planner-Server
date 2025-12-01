@@ -4,53 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  password     String
-  fullName     String?
-  bio          String?
-  profileImage String?
-  travelInterests String[] @default([])
-  visitedCountries String[] @default([])
-  currentLocation String?
-  role         Role     @default(USER)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  travelPlans  TravelPlan[]
-  reviewsGiven  Review[] @relation("reviews_given", references: [id])
-  reviewsReceived Review[] @relation("reviews_received", references: [id])
-}
-
-model TravelPlan {
-  id          String   @id @default(cuid())
-  title       String?
-  destination String
-  startDate   DateTime
-  endDate     DateTime
-  budgetMin   Int?
-  budgetMax   Int?
-  travelType  TravelType
-  description String?
-  visibility  Visibility @default(PUBLIC)
-  hostId      String
-  host        User      @relation(fields: [hostId], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-}
-
-model Review {
-  id        String   @id @default(cuid())
-  rating    Int
-  comment   String?
-  authorId  String
-  author    User     @relation("reviews_given", fields: [authorId], references: [id])
-  targetId  String
-  target    User     @relation("reviews_received", fields: [targetId], references: [id])
-  createdAt DateTime @default(now())
 }
 
 enum Role {
@@ -69,4 +22,81 @@ enum TravelType {
 enum Visibility {
   PUBLIC
   PRIVATE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  UNPAID
+  REFUNDED
+  FAILED
+}
+
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  password         String
+  fullName         String?
+  bio              String?
+  profileImage     String?
+  travelInterests  String[] @default([])
+  visitedCountries String[] @default([])
+  currentLocation  String?
+  role             Role     @default(USER)
+  paymentStatus    PaymentStatus @default(UNPAID)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  travelPlans      TravelPlan[]
+
+  // array side — do NOT specify fields/references here
+  reviewsGiven     Review[]  @relation("reviews_given")
+  reviewsReceived  Review[]  @relation("reviews_received")
+
+  payments         Payment[]
+}
+
+model TravelPlan {
+  id          String   @id @default(cuid())
+  title       String?
+  destination String
+  startDate   DateTime
+  endDate     DateTime
+  budgetMin   Int?
+  budgetMax   Int?
+  travelType  TravelType
+  description String?
+  visibility  Visibility @default(PUBLIC)
+
+  hostId      String
+  host        User      @relation(fields: [hostId], references: [id])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  authorId  String
+  author    User     @relation("reviews_given", fields: [authorId], references: [id])
+  targetId  String
+  target    User     @relation("reviews_received", fields: [targetId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id                 String        @id @default(cuid())
+  userId             String
+  user               User          @relation(fields: [userId], references: [id])
+  amount             Int           // amount in cents
+  currency           String        @default("bdt")
+  status             PaymentStatus @default(PENDING)
+  paymentGateway     String?       // e.g. "stripe"
+  transactionId      String        @unique
+  paymentGatewayData Json?         // store session / webhook details
+  description        String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 }
