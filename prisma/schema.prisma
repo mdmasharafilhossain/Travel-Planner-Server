@@ -90,12 +90,12 @@ model Payment {
   id                 String        @id @default(cuid())
   userId             String
   user               User          @relation(fields: [userId], references: [id])
-  amount             Int           // amount in cents
+  amount             Int           
   currency           String        @default("bdt")
   status             PaymentStatus @default(PENDING)
-  paymentGateway     String?       // e.g. "stripe"
+  paymentGateway     String?      
   transactionId      String        @unique
-  paymentGatewayData Json?         // store session / webhook details
+  paymentGatewayData Json?         
   description        String?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
