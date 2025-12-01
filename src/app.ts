@@ -4,6 +4,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 // import blogRoutes from './modules/blog/blog.routes'
 import authRoutes from './modules/auth/auth.routes'
+import userRoutes from './modules/users/user.route'
+import { errorHandler } from "./middlewares/errorHandler";
 // import projectRoutes from './modules/project/project.routes'
 // import aboutRoutes from './modules/about/about.route'
 // import { errorHandler } from "./middleware/errorHandler";
@@ -31,12 +33,18 @@ app.use(
 app.use('/api/auth', authRoutes);
 // app.use('/api/projects', projectRoutes);
 // app.use('/api/about', aboutRoutes);
+// app.use("/api/auth", authRoute);
+app.use("/api/users", userRoutes);
+// app.use("/api/travel-plans", travelPlanRoute);
+// app.use("/api/reviews", reviewRoute);
+// app.use("/api/payments", paymentRoute);
 
 
 
 // seedAdmin()
 // // Global error handling middleware
 // app.use(errorHandler);
+app.use(errorHandler);
 app.get('/', (req: Request, res: Response) => {
     res.send('Welcome to Portfolio Builder Website');
 });

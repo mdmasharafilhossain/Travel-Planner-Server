@@ -32,3 +32,22 @@ export function requireRole(role: "ADMIN" | "USER") {
     next();
   };
 }
+
+export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+ 
+
+
+ if (!req.user) {
+    return next(AppError.unauthorized("Authentication required! No user found."));
+  }
+
+  if (!req.user.role) {
+    return next(AppError.unauthorized("Invalid token payload: role missing"));
+  }
+
+  if (req.user.role !== "ADMIN") {
+    return next(AppError.forbidden("Only admins can access this resource"));
+  }
+
+  next();
+}
