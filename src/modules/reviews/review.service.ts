@@ -1,8 +1,9 @@
 import { prisma } from "../../config/db";
+import { AppError } from "../../utils/AppError";
 
 
 export async function addReview(authorId: string, targetId: string, rating: number, comment?: string) {
-  if (authorId === targetId) throw { statusCode: 400, message: "Cannot review yourself" };
+  if (authorId === targetId) throw AppError.badRequest("Cannot review yourself");
   const review = await prisma.review.create({
     data: {
       rating,

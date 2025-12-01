@@ -15,8 +15,8 @@ export async function createReview(req: AuthRequest, res: Response) {
       return res.status(400).json({ success: false, message: "targetId and rating required" });
     }
 
-    const r = await reviewService.addReview(authorId, targetId, rating, comment);
-    return res.json({ success: true, review: r });
+    const reviewData = await reviewService.addReview(authorId, targetId, rating, comment);
+    return res.json({ success: true, review: reviewData });
   } catch (err: any) {
     return res.status(err?.statusCode || 500).json({ success: false, message: err?.message || "Failed" });
   }
