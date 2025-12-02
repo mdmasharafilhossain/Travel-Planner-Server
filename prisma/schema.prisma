@@ -89,17 +89,34 @@ model Review {
   createdAt DateTime @default(now())
 }
 
+// model Payment {
+//   id                 String        @id @default(cuid())
+//   userId             String
+//   user               User          @relation(fields: [userId], references: [id])
+//   amount             Int           
+//   currency           String        @default("bdt")
+//   status             PaymentStatus @default(PENDING)
+//   paymentGateway     String?      
+//   transactionId      String?        @unique
+//   paymentGatewayData Json?         
+//   description        String?
+//   createdAt          DateTime      @default(now())
+//   updatedAt          DateTime      @updatedAt
+// }
 model Payment {
   id                 String        @id @default(cuid())
   userId             String
   user               User          @relation(fields: [userId], references: [id])
-  amount             Int           
+  amount             Int
   currency           String        @default("bdt")
   status             PaymentStatus @default(PENDING)
-  paymentGateway     String?      
-  transactionId      String?        @unique
-  paymentGatewayData Json?         
+  paymentGateway     String?
+  transactionId      String?       @unique
+  sessionKey         String?       // <--- added
+  gatewayTranId      String?       // <--- optional: gateway's tran_id after validation
+  paymentGatewayData Json?
   description        String?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 }
+

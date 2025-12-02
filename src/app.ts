@@ -8,6 +8,7 @@ import userRoutes from './modules/users/user.route'
 import { errorHandler } from "./middlewares/errorHandler";
 import travelPlanRoute from './modules/travelPlans/travelPlan.route'
 import reviewRoute from './modules/reviews/review.routes'
+import paymentRoute from './modules/payments/payment.route'
 // import { errorHandler } from "./middleware/errorHandler";
 // import { seedAdmin } from "./utils/seedAdmin";
 
@@ -38,7 +39,7 @@ app.use('/api/auth', authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/travel-plans", travelPlanRoute);
 app.use("/api/reviews", reviewRoute);
-// app.use("/api/payments", paymentRoute);
+app.use("/api/payments", paymentRoute);
 
 
 
