@@ -1,190 +1,205 @@
-
-
-import Stripe from "stripe";
-import { PaymentStatus } from "@prisma/client";
+import dotenv from "dotenv";
+import { AppError } from "../../utils/AppError";
 import { prisma } from "../../config/db";
-import { stripe } from "../../utils/helper/stripe";
-import dotenv from 'dotenv';
+import SSLService from "../../sslCommerz/sslCommerz.service";
 dotenv.config();
 
-export async function createCheckoutSession(params: {
-  userId: string;
-  amountCents: number;
-  currency?: string;
-  description?: string;
-  successUrl?: string;
-  cancelUrl?: string;
-  transactionId?: string | null; // optional initial transaction id
-}) {
-  const {
-    userId,
-    amountCents,
-    currency = "bdt",
-    description,
-    successUrl,
-    cancelUrl,
-    transactionId = null
-  } = params;
+export async function initSubscriptionPayment(userId: string, plan: string) {
+  // validate plan and amount
+  const PLAN = plan?.toLowerCase();
+  let amount: number;
+  if (PLAN === "monthly") amount = Number(process.env.PRICE_MONTHLY || 0);
+  else if (PLAN === "yearly") amount = Number(process.env.PRICE_YEARLY ||  0);
+  else if (PLAN === "verified_badge") amount = Number(process.env.PRICE_VERIFIED_BADGE || 0);
+  else throw AppError.badRequest("Invalid plan");
 
-  // 1) create DB payment record (PENDING)
+  if (!amount || amount <= 0) throw AppError.badRequest("Invalid amount for the selected plan");
+
+  // create payment record
+  const transactionId = `TB_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
   const payment = await prisma.payment.create({
     data: {
       userId,
-      amount: amountCents,
-      currency,
-      status: PaymentStatus.PENDING,
-      paymentGateway: "stripe",
-      paymentGatewayData: {},
-      transactionId: transactionId ?? null,
-      description: description ?? null
+      amount: Math.round(amount), 
+      currency: "bdt",
+      status: "PENDING",
+      paymentGateway: "sslcommerz",
+      transactionId,
+      description: `subscription:${PLAN}`
     }
   });
 
-  // 2) create Stripe checkout session
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    mode: "payment",
-    line_items: [
-      {
-        price_data: {
-          currency,
-          product_data: {
-            name: description ?? "TravelBuddy Payment"
-          },
-          unit_amount: amountCents
-        },
-        quantity: 1
-      }
-    ],
-    metadata: {
-      paymentId: payment.id,
-      userId
-    },
-    success_url:
-      successUrl ||
-      process.env.CLIENT_SUCCESS_URL ||
-      "https://example.com/success?session_id={CHECKOUT_SESSION_ID}",
-    cancel_url:
-      cancelUrl || process.env.CLIENT_CANCEL_URL || "https://example.com/cancel"
-  });
+  // fetch user (for name/email/phone) - ensure user has profile info
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw AppError.notFound("User not found");
 
-  // 3) update payment with session object
+  // prepare SSL payload
+  const sslPayload = {
+    name: user.fullName ?? user.email,
+    email: user.email,
+    phoneNumber: "", // If you have phone in user profile, add it. Prisma user model currently has no phone.
+    address: user.currentLocation ?? "",
+    amount: payment.amount,
+    transactionId: payment.transactionId,
+    productName: `TravelBuddy ${PLAN}`
+  };
+
+  // call SSLCommerz
+  const result = await SSLService.sslPaymentInit(sslPayload as any);
+  if (!result || !result.GatewayPageURL) {
+    // update payment with gateway data if present
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: { paymentGatewayData: result ?? null }
+    });
+    throw AppError.internalError("Failed to initiate payment with SSLCommerz");
+  }
+
+  // store gateway response
   await prisma.payment.update({
     where: { id: payment.id },
-    data: {
-      paymentGatewayData: session as any
-    }
+    data: { paymentGatewayData: result as any }
   });
 
-  return { payment, session };
+  return { paymentUrl: result.GatewayPageURL, paymentId: payment.id, transactionId: payment.transactionId };
 }
 
 /**
- * Handle Stripe webhook events and update Payment.transactionId where possible.
+ * Called on redirect success (customer returns)
  */
-export async function handleStripeWebhookEvent(event: Stripe.Event) {
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const session = event.data.object as Stripe.Checkout.Session;
+export async function handleSubscriptionSuccess(query: Record<string,string>) {
+  const txId = query.transactionId;
+  if (!txId) throw AppError.badRequest("transactionId missing");
 
-      // session.payment_status and session.payment_intent may be present
-      const paymentId = session.metadata?.paymentId as string | undefined;
-      const userId = session.metadata?.userId as string | undefined;
+  // find payment
+  const payment = await prisma.payment.findUnique({ where: { transactionId: txId }});
+  if (!payment) throw AppError.notFound("Payment not found");
 
-      // Determine transaction id: prefer payment_intent id (string) or charge id inside payment_intent object
-      let transactionId: string | null = null;
-      if (session.payment_intent) {
-        // session.payment_intent is often a string id
-        transactionId = typeof session.payment_intent === "string"
-          ? session.payment_intent
-          : // sometimes stripe may embed object
-            (session.payment_intent as any).id ?? null;
-      } else if ((session as any).payment_intent && typeof (session as any).payment_intent === "object") {
-        transactionId = (session as any).payment_intent.id ?? null;
-      }
-
-      const status = session.payment_status === "paid" ? PaymentStatus.PAID : PaymentStatus.UNPAID;
-
-      if (paymentId) {
-        await prisma.payment.update({
-          where: { id: paymentId },
-          data: {
-            status,
-            transactionId,
-            paymentGatewayData: session as any
-          }
-        });
-      }
-
-      if (userId) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { paymentStatus: status }
-        });
-      }
-
-      return { ok: true, event: event.type, paymentId, transactionId };
-    }
-
-    case "payment_intent.succeeded": {
-      const pi = event.data.object as Stripe.PaymentIntent;
-      const metadata = (pi.metadata || {}) as Record<string, any>;
-      const paymentId = metadata.paymentId as string | undefined;
-      const userId = metadata.userId as string | undefined;
-      const transactionId = pi.id;
-
-      if (paymentId) {
-        await prisma.payment.update({
-          where: { id: paymentId },
-          data: {
-            status: PaymentStatus.PAID,
-            transactionId,
-            paymentGatewayData: pi as any
-          }
-        });
-      }
-
-      if (userId) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { paymentStatus: PaymentStatus.PAID }
-        });
-      }
-
-      return { ok: true, event: event.type, paymentId, transactionId };
-    }
-
-    case "payment_intent.payment_failed":
-    case "checkout.session.async_payment_failed": {
-      const obj = event.data.object as any;
-      const metadata = (obj.metadata || {}) as Record<string, any>;
-      const paymentId = metadata.paymentId as string | undefined;
-      const userId = metadata.userId as string | undefined;
-      const transactionId = obj.id ?? null;
-
-      if (paymentId) {
-        await prisma.payment.update({
-          where: { id: paymentId },
-          data: {
-            status: PaymentStatus.FAILED,
-            transactionId,
-            paymentGatewayData: obj
-          }
-        });
-      }
-
-      if (userId) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { paymentStatus: PaymentStatus.FAILED }
-        });
-      }
-
-      return { ok: true, event: event.type, paymentId, transactionId };
-    }
-
-    default:
-      // ignore other events
-      return { ok: false, event: event.type };
+  if (payment.status === "PAID") {
+    // already processed
+    return { success: true, message: "Already processed" , payment };
   }
+
+  // Determine plan from description
+  const desc = payment.description ?? "";
+  let plan = "monthly";
+  if (desc.includes("subscription:yearly")) plan = "yearly";
+  else if (desc.includes("subscription:monthly")) plan = "monthly";
+  else if (desc.includes("verified_badge")) plan = "verified_badge";
+  else if (desc.includes("subscription:verified_badge")) plan = "verified_badge";
+
+  // Update payment and user in a transaction
+  const updated = await prisma.$transaction(async (tx) => {
+    const paymentUpdated = await tx.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: "PAID",
+        paymentGatewayData: { successQuery: query, updatedAt: new Date() },
+        updatedAt: new Date()
+      }
+    });
+
+    // set user premium and expiry based on plan
+    if (plan === "monthly" || plan === "yearly") {
+      const now = new Date();
+      const addMonths = plan === "monthly" ? 1 : 12;
+      // if user has existing premium expiry in future, extend from that date; else from now
+      const user = await tx.user.findUnique({ where: { id: payment.userId } });
+      let baseDate = now;
+      if (user?.premiumExpiresAt && user.premiumExpiresAt > now) baseDate = user.premiumExpiresAt;
+      const expiry = new Date(baseDate);
+      expiry.setMonth(expiry.getMonth() + addMonths);
+
+      await tx.user.update({
+        where: { id: payment.userId },
+        data: {
+          isPremium: true,
+          paymentStatus: "PAID",
+          premiumExpiresAt: expiry
+        }
+      });
+    } else if (plan === "verified_badge") {
+      await tx.user.update({
+        where: { id: payment.userId },
+        data: {
+          isVerifiedBadge: true,
+          paymentStatus: "PAID"
+        }
+      });
+    }
+
+    return paymentUpdated;
+  });
+
+  return { success: true, message: "Payment successful", payment: updated };
+}
+
+export async function handleSubscriptionFail(query: Record<string,string>) {
+  const txId = query.transactionId;
+  if (!txId) throw AppError.badRequest("transactionId missing");
+  await prisma.payment.updateMany({
+    where: { transactionId: txId },
+    data: { status: "FAILED", paymentGatewayData: { failQuery: query } }
+  });
+  return { success: false, message: "Payment failed" };
+}
+
+export async function handleSubscriptionCancel(query: Record<string,string>) {
+  const txId = query.transactionId;
+  if (!txId) throw AppError.badRequest("transactionId missing");
+  await prisma.payment.updateMany({
+    where: { transactionId: txId },
+    data: { status: "UNPAID", paymentGatewayData: { cancelQuery: query } }
+  });
+  return { success: false, message: "Payment cancelled" };
+}
+
+/**
+ * IPN validation (SSLCommerz hits this)
+ */
+export async function validateIPN(payload: any) {
+  const response = await SSLService.validatePayment(payload);
+  // update payment by tran_id
+  const tranId = payload.tran_id;
+  if (!tranId) throw AppError.badRequest("tran_id missing in IPN payload");
+
+  // set status according to validation response (adapt mapping if needed)
+  const statusFromResponse = (response?.status || "").toUpperCase();
+  const statusToStore = statusFromResponse === "VALID" || statusFromResponse === "VALIDATED" || statusFromResponse === "PAID" ? "PAID" : "UNPAID";
+
+  await prisma.payment.updateMany({
+    where: { transactionId: tranId },
+    data: { paymentGatewayData: response, status: statusToStore }
+  });
+
+  // If VALID and PAID, also mark user premium or badge — derive plan from description if available
+  if (statusToStore === "PAID") {
+    const payments = await prisma.payment.findMany({ where: { transactionId: tranId }});
+    for (const p of payments) {
+      // same logic: derive plan
+      const desc = p.description ?? "";
+      if (desc.includes("subscription:yearly") || desc.includes("subscription:monthly")) {
+        // extend premium (reuse handleSubscriptionSuccess but careful to not double-update payment)
+        // We'll set user premium (safe)
+        const now = new Date();
+        const addMonths = desc.includes("yearly") ? 12 : 1;
+        const user = await prisma.user.findUnique({ where: { id: p.userId }});
+        let baseDate = now;
+        if (user?.premiumExpiresAt && user.premiumExpiresAt > now) baseDate = user.premiumExpiresAt;
+        const expiry = new Date(baseDate);
+        expiry.setMonth(expiry.getMonth() + addMonths);
+        await prisma.user.update({
+          where: { id: p.userId },
+          data: { isPremium: true, paymentStatus: "PAID", premiumExpiresAt: expiry }
+        });
+      } else if (desc.includes("verified_badge")) {
+        await prisma.user.update({
+          where: { id: p.userId },
+          data: { isVerifiedBadge: true, paymentStatus: "PAID" }
+        });
+      }
+    }
+  }
+
+  return response;
 }
