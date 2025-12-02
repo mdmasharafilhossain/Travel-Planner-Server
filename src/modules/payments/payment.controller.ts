@@ -11,10 +11,6 @@ import {
   getPaymentStatus ,
   getAllTransactionHistory
 } from "./payment.service";
-
-/**
- * Try common candidate names for transaction id from req.query or req.body
- */
 function extractTransactionId(req: Request): string | null {
   const q = req.query || {};
   console.log(q,"Query............");
@@ -32,8 +28,6 @@ function extractTransactionId(req: Request): string | null {
   }
   return null;
 }
-
-// INIT
 export async function initSubscriptionHandler(req: Request, res: Response) {
   try {
     const userId = (req as any).user?.id;
@@ -49,8 +43,6 @@ export async function initSubscriptionHandler(req: Request, res: Response) {
     return res.status(err.statusCode || 500).json({ ok: false, message: err.message || "init failed" });
   }
 }
-
-// SUCCESS (accept GET or POST)
 export async function successHandler(req: Request, res: Response) {
   try {
     // extract tx id (robust)
