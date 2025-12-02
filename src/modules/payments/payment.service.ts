@@ -300,3 +300,190 @@ export async function validateIPN(payload: any) {
 
   return response;
 }
+// --- add near the bottom of src/modules/payments/payment.service.ts ---
+
+/**
+ * Get payment + user by transactionId
+ */
+export async function getPaymentStatus(transactionId: string) {
+  if (!transactionId) throw AppError.badRequest("transactionId required");
+
+  const payment = await prisma.payment.findUnique({
+    where: { transactionId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          isPremium: true,
+          premiumExpiresAt: true,
+          isVerifiedBadge: true,
+          paymentStatus: true,
+        }
+      }
+    }
+  });
+
+  if (!payment) {
+    return { payment: null, user: null };
+  }
+
+  return {
+    payment: {
+      id: payment.id,
+      amount: payment.amount,
+      currency: payment.currency,
+      status: payment.status,
+      transactionId: payment.transactionId,
+      description: payment.description,
+      paymentGateway: payment.paymentGateway,
+      paymentGatewayData: payment.paymentGatewayData,
+      createdAt: payment.createdAt,
+      updatedAt: payment.updatedAt
+    },
+    user: payment.user
+  };
+}
+
+/**
+ * Admin: get paginated transaction history with filtering
+ * query: { page, limit, status, userId, fromDate, toDate, search, sortBy, sortOrder }
+ */
+export async function getAllTransactionHistory(opts: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  userId?: string;
+  fromDate?: string;
+  toDate?: string;
+  search?: string;
+  sortBy?: string;    // e.g. "createdAt"
+  sortOrder?: "asc" | "desc";
+}) {
+  const page = Math.max(1, Number(opts.page || 1));
+  const limit = Math.min(100, Math.max(1, Number(opts.limit || 20)));
+  const skip = (page - 1) * limit;
+
+  const where: any = {};
+
+  if (opts.status) {
+    where.status = opts.status.toUpperCase();
+  }
+  if (opts.userId) {
+    where.userId = opts.userId;
+  }
+  if (opts.fromDate || opts.toDate) {
+    where.createdAt = {};
+    if (opts.fromDate) where.createdAt.gte = new Date(opts.fromDate);
+    if (opts.toDate) where.createdAt.lte = new Date(opts.toDate);
+  }
+  if (opts.search) {
+    // search by transactionId or description or user's email (requires relational filter)
+    where.OR = [
+      { transactionId: { contains: opts.search, mode: "insensitive" } },
+      { description: { contains: opts.search, mode: "insensitive" } },
+      // searching user email requires nested condition using some Prisma syntax:
+      {
+        user: {
+          some: {
+            email: { contains: opts.search, mode: "insensitive" }
+          }
+        }
+      } as any
+    ];
+    // Note: depending on prisma version, nested 'user.some' for single relation may not be supported.
+    // We'll handle user search below by a different approach if needed (see fallback).
+  }
+
+  // Build order
+  const orderBy = {};
+  const sortBy = opts.sortBy || "createdAt";
+  const sortOrder = opts.sortOrder || "desc";
+  (orderBy as any)[sortBy] = sortOrder;
+
+  // If search includes user email and Prisma can't use 'user.some' for relation, fallback:
+  let payments: any[] = [];
+  let total = 0;
+
+  // Try primary query first (search excluding user.email)
+  const wherePrimary = { ...where };
+  if (wherePrimary.OR) {
+    // remove the user.some entry if present (Prisma single relation can't use some)
+    wherePrimary.OR = wherePrimary.OR.filter((clause: any) => {
+      const keys = Object.keys(clause || {});
+      if (keys.length === 1 && keys[0] === "user") return false;
+      return true;
+    });
+    if (wherePrimary.OR.length === 0) delete wherePrimary.OR;
+  }
+
+  total = await prisma.payment.count({ where: wherePrimary });
+
+  payments = await prisma.payment.findMany({
+    where: wherePrimary,
+    include: {
+      user: { select: { id: true, email: true, fullName: true } }
+    },
+    orderBy: orderBy as any,
+    skip,
+    take: limit
+  });
+
+  // If the user requested search and total is low / or they searched by user email,
+  // attempt a second fetch by finding matching userIds and including them.
+  if (opts.search) {
+    // find users matching the search term
+    const matchedUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          { email: { contains: opts.search, mode: "insensitive" } },
+          { fullName: { contains: opts.search, mode: "insensitive" } }
+        ]
+      },
+      select: { id: true }
+    });
+
+    if (matchedUsers.length > 0) {
+      const userIds = matchedUsers.map((u) => u.id);
+      // merge where conditions to include these userIds
+      const whereWithUsers = { ...wherePrimary, OR: [{ userId: { in: userIds } }, ...(wherePrimary.OR || [])] };
+
+      total = await prisma.payment.count({ where: whereWithUsers });
+
+      payments = await prisma.payment.findMany({
+        where: whereWithUsers,
+        include: { user: { select: { id: true, email: true, fullName: true } } },
+        orderBy: orderBy as any,
+        skip,
+        take: limit
+      });
+    }
+  }
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages
+    },
+    data: payments.map((p) => ({
+      id: p.id,
+      userId: p.userId,
+      user: p.user,
+      amount: p.amount,
+      currency: p.currency,
+      status: p.status,
+      description: p.description,
+      transactionId: p.transactionId,
+      paymentGateway: p.paymentGateway,
+      paymentGatewayData: p.paymentGatewayData,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt
+    }))
+  };
+}
+

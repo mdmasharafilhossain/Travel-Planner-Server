@@ -1,4 +1,3 @@
-// src/modules/payments/payment.controller.ts
 import { Request, Response } from "express";
 import dotenv from "dotenv";
 dotenv.config();
@@ -9,7 +8,8 @@ import {
   handleSubscriptionFail,
   handleSubscriptionCancel,
   validateIPN,
-  getPaymentStatus // if you added this earlier
+  getPaymentStatus ,
+  getAllTransactionHistory
 } from "./payment.service";
 
 /**
@@ -17,12 +17,14 @@ import {
  */
 function extractTransactionId(req: Request): string | null {
   const q = req.query || {};
+  console.log(q,"Query............");
   const b = (req.body && typeof req.body === "object") ? req.body as Record<string, any> : {};
 
   const candidates = [
     q.transactionId, q.transactionid, q.tran_id, q.tranId, q.tranid, q.tranID,
     b.tran_id, b.tranId, b.transactionId, b.transaction_id, b.transactionid, b.transactionID
   ];
+  console.log(candidates,"Candidites..........");
 
   for (const c of candidates) {
     if (typeof c === "string" && c.trim() !== "") return c.trim();
@@ -160,3 +162,47 @@ export async function getPaymentStatusHandler(req: Request, res: Response) {
     return res.status(err.statusCode || 500).json({ ok: false, message: err.message || "Failed to get status" });
   }
 }
+// add imports at top if not present
+// import { Request, Response } from "express";
+// import { getAllTransactionHistory, getPaymentStatus } from "./payment.service"; // service functions added
+
+// Admin-only: get all transactions with filters
+export async function getAllTransactionsHandler(req: Request, res: Response) {
+  try {
+    const authUser = (req as any).user;
+    if (!authUser) return res.status(401).json({ ok: false, message: "Authentication required" });
+    if (authUser.role !== "ADMIN" && authUser.role !== "admin") {
+      return res.status(403).json({ ok: false, message: "Admin privileges required" });
+    }
+
+    const {
+      page,
+      limit,
+      status,
+      userId,
+      fromDate,
+      toDate,
+      search,
+      sortBy,
+      sortOrder
+    } = req.query;
+
+    const result = await getAllTransactionHistory({
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      status: status ? String(status) : undefined,
+      userId: userId ? String(userId) : undefined,
+      fromDate: fromDate ? String(fromDate) : undefined,
+      toDate: toDate ? String(toDate) : undefined,
+      search: search ? String(search) : undefined,
+      sortBy: sortBy ? String(sortBy) : undefined,
+      sortOrder: sortOrder === "asc" ? "asc" : "desc"
+    });
+
+    return res.status(200).json({ ok: true, ...result });
+  } catch (err: any) {
+    console.error("getAllTransactionsHandler error:", err);
+    return res.status(err.statusCode || 500).json({ ok: false, message: err.message || "Failed to fetch transactions" });
+  }
+}
+

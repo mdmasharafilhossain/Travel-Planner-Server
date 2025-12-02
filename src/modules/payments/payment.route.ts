@@ -8,7 +8,8 @@ import {
   failHandler,
   cancelHandler,
   validatePaymentHandler,
-  getPaymentStatusHandler
+  getPaymentStatusHandler,
+  getAllTransactionsHandler
 } from "./payment.controller";
 
 const router = Router();
@@ -30,5 +31,5 @@ router.post("/validate-payment", express.urlencoded({ extended: true }), validat
 
 // status endpoint
 router.get("/status/:transactionId", getPaymentStatusHandler);
-
+router.get("/admin/transactions", requireAuth, getAllTransactionsHandler);
 export default router;
