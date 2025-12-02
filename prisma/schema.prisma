@@ -44,17 +44,20 @@ model User {
   currentLocation  String?
   role             Role     @default(USER)
   paymentStatus    PaymentStatus @default(UNPAID)
+  isPremium        Boolean  @default(false)
+  premiumExpiresAt DateTime?         // optional expiry timestamp
+  isVerifiedBadge  Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   travelPlans      TravelPlan[]
 
-  // array side — do NOT specify fields/references here
   reviewsGiven     Review[]  @relation("reviews_given")
   reviewsReceived  Review[]  @relation("reviews_received")
 
   payments         Payment[]
 }
+
 
 model TravelPlan {
   id          String   @id @default(cuid())
@@ -94,7 +97,7 @@ model Payment {
   currency           String        @default("bdt")
   status             PaymentStatus @default(PENDING)
   paymentGateway     String?      
-  transactionId      String        @unique
+  transactionId      String?        @unique
   paymentGatewayData Json?         
   description        String?
   createdAt          DateTime      @default(now())
