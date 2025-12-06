@@ -68,3 +68,6 @@ export const changePasswordSchema = z
     message: "New password cannot be the same as old password",
     path: ["newPassword"]
   });
+export const changeRoleSchema = z.object({
+  role: z.enum(["USER", "ADMIN"]),
+});

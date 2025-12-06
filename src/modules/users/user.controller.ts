@@ -66,3 +66,33 @@ export async function getMe(req: AuthRequest, res: Response) {
     return res.status(err.statusCode || 500).json({ success: false, message: err.message || "Failed" });
   }
 }
+
+
+// New Functionality
+
+
+export async function deleteUser(req: Request, res: Response) {
+  try {
+    const id = req.params.id;
+    const result = await userService.deleteUser(id);
+    return res.json({ success: true, ...result });
+  } catch (err: any) {
+    return res.status(err.statusCode || 500).json({ success: false, message: err.message || "Failed" });
+  }
+}
+
+/**
+ * Change role for a user
+ * Protected by requireAdmin in routes.
+ * expects body { role: "USER" | "ADMIN" }
+ */
+export async function changeRole(req: Request, res: Response) {
+  try {
+    const id = req.params.id;
+    const { role } = req.body;
+    const result = await userService.changeUserRole(id, role);
+    return res.json({ success: true, ...result });
+  } catch (err: any) {
+    return res.status(err.statusCode || 500).json({ success: false, message: err.message || "Failed" });
+  }
+}

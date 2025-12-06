@@ -12,4 +12,5 @@ export const userModel = {
       where: { id },
      
     }),
+    delete: (id: string) => prisma.user.delete({ where: { id } }),
 };

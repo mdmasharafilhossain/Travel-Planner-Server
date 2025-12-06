@@ -50,3 +50,32 @@ export async function getMe(id: string) {
   if (!user) throw AppError.notFound("User not found");
   return user;
 }
+
+
+
+// New Functionality 
+export async function deleteUser(id: string) {
+  const user = await userModel.findById(id);
+  if (!user) throw AppError.notFound("User not found");
+   
+
+  const deleted = await userModel.delete(id);
+  // @ts-ignore
+  delete deleted.password;
+  return { message: "User deleted", user: deleted };
+}
+
+
+export async function changeUserRole(id: string, role: "USER" | "ADMIN") {
+  const user = await userModel.findById(id);
+  if (!user) throw AppError.notFound("User not found");
+
+  if (!["USER", "ADMIN"].includes(role)) {
+    throw AppError.badRequest("Invalid role");
+  }
+
+  const updated = await userModel.update(id, { role });
+  // @ts-ignore
+  delete updated.password;
+  return { message: "Role updated", user: updated };
+}
