@@ -59,3 +59,19 @@ export async function removePlan(req: Request, res: Response) {
     res.status(err.statusCode || 500).json({ success: false, message: err.message || "Failed" });
   }
 }
+
+export async function updatePlan(req: Request, res: Response) {
+  try {
+    const id = req.params.id;
+    const userId = req.user.id;
+    const isAdmin = req.user.role === "ADMIN";
+
+    const result = await travelService.updatePlan(id, userId, req.body, isAdmin);
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res
+      .status(err.statusCode || 500)
+      .json({ success: false, message: err.message || "Failed" });
+  }
+}
+

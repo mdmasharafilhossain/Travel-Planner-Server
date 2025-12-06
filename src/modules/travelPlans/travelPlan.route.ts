@@ -1,7 +1,7 @@
 import { Router } from "express";
 import * as travelController from "./travelPlan.controller";
 import { requireAuth } from "../../middlewares/auth";
-import { createPlanSchema } from "./travelPlan.schema";
+import { createPlanSchema, updatePlanSchema } from "./travelPlan.schema";
 import { validateBody } from "../../middlewares/validate";
 
 
@@ -12,5 +12,11 @@ router.post("/", requireAuth, validateBody(createPlanSchema), travelController.c
 router.get("/match", travelController.match);
 router.get("/:id", travelController.getPlan);
 router.delete("/:id", requireAuth, travelController.removePlan);
+router.patch(
+  "/:id",
+  requireAuth,
+  validateBody(updatePlanSchema),
+  travelController.updatePlan
+);
 
 export default router;

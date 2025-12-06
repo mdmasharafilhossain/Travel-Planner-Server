@@ -81,11 +81,7 @@ export async function deleteUser(req: Request, res: Response) {
   }
 }
 
-/**
- * Change role for a user
- * Protected by requireAdmin in routes.
- * expects body { role: "USER" | "ADMIN" }
- */
+
 export async function changeRole(req: Request, res: Response) {
   try {
     const id = req.params.id;

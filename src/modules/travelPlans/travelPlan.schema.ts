@@ -70,3 +70,33 @@ export const createPlanSchema = z
     message: "Minimum budget cannot be greater than maximum budget",
     path: ["budgetMin"],
   });
+
+  export const updatePlanSchema = createPlanSchema
+  .partial()
+  .refine(
+    (data) => {
+      // Only validate date order if both provided in update
+      if (data.startDate && data.endDate) {
+        const start = new Date(data.startDate);
+        const end = new Date(data.endDate);
+        return end >= start;
+      }
+      return true;
+    },
+    {
+      message: "End date must be after or equal to start date",
+      path: ["endDate"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.budgetMin != null && data.budgetMax != null) {
+        return data.budgetMin <= data.budgetMax;
+      }
+      return true;
+    },
+    {
+      message: "Minimum budget cannot be greater than maximum budget",
+      path: ["budgetMin"],
+    }
+  );

@@ -1,3 +1,4 @@
+import { th } from "zod/v4/locales";
 import { prisma } from "../../config/db";
 import { AppError } from "../../utils/AppError";
 
@@ -53,4 +54,39 @@ export async function deletePlan(id: string, userId: string, isAdmin = false) {
   if (plan.hostId !== userId && !isAdmin) throw { statusCode: 403, message: "Forbidden" };
   await prisma.travelPlan.delete({ where: { id }});
   return { message: "Deleted" };
+}
+
+
+// New Functionality
+export async function updatePlan(
+  id: string,
+  userId: string,
+  data: any,
+  isAdmin = false
+) {
+  const plan = await prisma.travelPlan.findUnique({ where: { id } });
+  if (!plan) throw AppError.notFound("Travel plan not found");
+  if (plan.hostId !== userId && !isAdmin)
+   throw  AppError.forbidden("You do not have permission to update this plan");
+
+  const updateData: any = {};
+
+  if (data.title !== undefined) updateData.title = data.title;
+  if (data.destination !== undefined) updateData.destination = data.destination;
+  if (data.startDate !== undefined)
+    updateData.startDate = new Date(data.startDate);
+  if (data.endDate !== undefined) updateData.endDate = new Date(data.endDate);
+  if (data.budgetMin !== undefined) updateData.budgetMin = data.budgetMin;
+  if (data.budgetMax !== undefined) updateData.budgetMax = data.budgetMax;
+  if (data.travelType !== undefined) updateData.travelType = data.travelType;
+  if (data.description !== undefined)
+    updateData.description = data.description ?? null;
+  if (data.visibility !== undefined) updateData.visibility = data.visibility;
+
+  const updated = await prisma.travelPlan.update({
+    where: { id },
+    data: updateData,
+  });
+
+  return { message: "Plan updated", plan: updated };
 }
