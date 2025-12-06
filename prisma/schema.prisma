@@ -57,6 +57,8 @@ model User {
   reviewsReceived  Review[]  @relation("reviews_received")
 
   payments         Payment[]
+
+  travelPlanParticipants TravelPlanParticipant[]
 }
 
 
@@ -77,6 +79,8 @@ model TravelPlan {
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  travelPlanParticipants TravelPlanParticipant[]
 }
 
 model Review {
@@ -120,4 +124,15 @@ model Payment {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 }
+model TravelPlanParticipant {
+  id           String     @id @default(cuid())
+  travelPlanId String
+  travelPlan   TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status       String     @default("PENDING") // PENDING | ACCEPTED | REJECTED | CANCELLED
+  requestedAt  DateTime   @default(now())
+  respondedAt  DateTime?
 
+  @@unique([travelPlanId, userId])
+}
