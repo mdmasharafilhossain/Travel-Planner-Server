@@ -73,7 +73,7 @@ model TravelPlan {
   visibility  Visibility @default(PUBLIC)
 
   hostId      String
-  host        User      @relation(fields: [hostId], references: [id])
+  host        User      @relation(fields: [hostId], references: [id],onDelete: Cascade)
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -84,9 +84,9 @@ model Review {
   rating    Int
   comment   String?
   authorId  String
-  author    User     @relation("reviews_given", fields: [authorId], references: [id])
+  author    User     @relation("reviews_given", fields: [authorId], references: [id],onDelete: Cascade)
   targetId  String
-  target    User     @relation("reviews_received", fields: [targetId], references: [id])
+  target    User     @relation("reviews_received", fields: [targetId], references: [id],onDelete: Cascade)
   createdAt DateTime @default(now())
 }
 
@@ -107,7 +107,7 @@ model Review {
 model Payment {
   id                 String        @id @default(cuid())
   userId             String
-  user               User          @relation(fields: [userId], references: [id])
+  user               User          @relation(fields: [userId], references: [id],onDelete: Cascade)
   amount             Int
   currency           String        @default("bdt")
   status             PaymentStatus @default(PENDING)
