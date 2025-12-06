@@ -46,7 +46,7 @@ throw AppError.badRequest("Old password is incorrect");
 export async function getMe(id: string) {
   
   const user = await userModel.findByIdSafe(id);
-  console.log(user,"User");
+  
   if (!user) throw AppError.notFound("User not found");
   return user;
 }

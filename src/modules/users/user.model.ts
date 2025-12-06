@@ -10,18 +10,6 @@ export const userModel = {
   findByIdSafe: (id: string) =>
     prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        email: true,
-        fullName: true,
-        bio: true,
-        profileImage: true,
-        travelInterests: true,
-        visitedCountries: true,
-        currentLocation: true,
-        role: true,
-        
-        
-      },
+     
     }),
 };
