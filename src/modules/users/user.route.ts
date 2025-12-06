@@ -12,9 +12,9 @@ router.get("/:id",requireAuth, controller.getProfile);
 
 router.patch("/:id", requireAuth, validateBody(updateUserSchema), controller.updateProfile);
 router.post("/:id/change-password", requireAuth, validateBody(changePasswordSchema), controller.changePassword);
-// Change role (ADMIN only)
+
 router.patch("/:id/role", requireAuth, requireAdmin, validateBody(changeRoleSchema), controller.changeRole);
 
-// Delete user (ADMIN only)
+
 router.delete("/:id", requireAuth, requireAdmin, controller.deleteUser);
 export default router;
