@@ -1,5 +1,3 @@
-/* src/modules/dashboard/userDashboard.service.ts */
-
 import { prisma } from "../../config/db";
 
 export async function getUserDashboard(userId: string) {
