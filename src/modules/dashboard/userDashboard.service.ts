@@ -62,6 +62,7 @@ export async function getUserDashboard(userId: string) {
       where: {
         id: { not: plan.id },
         destination: plan.destination,
+        travelType: plan.travelType,
         visibility: "PUBLIC",
         AND: [
           { startDate: { lte: plan.endDate } },

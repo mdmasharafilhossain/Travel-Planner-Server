@@ -1,6 +1,7 @@
 import { th } from "zod/v4/locales";
 import { prisma } from "../../config/db";
 import { AppError } from "../../utils/AppError";
+import { TravelType, Visibility } from "@prisma/client";
 
 export async function createPlan(hostId: string, data: any) {
   const CreateNewPlan = await prisma.travelPlan.create({
@@ -45,8 +46,22 @@ export async function getPlan(id: string) {
 }
 
 
+// export async function listPlans(skip = 0, take = 20) {
+//   return prisma.travelPlan.findMany({ skip, take, include: { host: true }, orderBy: { startDate: 'asc' }});
+// }
 export async function listPlans(skip = 0, take = 20) {
-  return prisma.travelPlan.findMany({ skip, take, include: { host: true }, orderBy: { startDate: 'asc' }});
+  return prisma.travelPlan.findMany({
+    skip,
+    take,
+    where: {
+      visibility: Visibility.PUBLIC,      // visibility = "PUBLIC"
+      // NOT: {
+      //   travelType: TravelType.SOLO,      // travelType != "SOLO"
+      // },
+    },
+    include: { host: true },
+    orderBy: { startDate: "asc" },
+  });
 }
 
 export async function matchPlans(query: { destination?: string; startDate?: string; endDate?: string; travelType?: string }) {
