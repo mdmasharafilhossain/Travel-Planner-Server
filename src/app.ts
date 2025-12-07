@@ -9,6 +9,7 @@ import { errorHandler } from "./middlewares/errorHandler";
 import travelPlanRoute from './modules/travelPlans/travelPlan.route'
 import reviewRoute from './modules/reviews/review.routes'
 import paymentRoute from './modules/payments/payment.route'
+import userDashboardRoutes from './modules/dashboard/userDashboard.routes'
 
 const app = express();
 
@@ -76,6 +77,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/travel-plans", travelPlanRoute);
 app.use("/api/reviews", reviewRoute);
 app.use("/api/payments", paymentRoute);
+app.use("/api/dashboard", userDashboardRoutes);
 
 // Error handling
 app.use(errorHandler);
