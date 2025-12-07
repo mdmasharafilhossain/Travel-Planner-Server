@@ -9,5 +9,5 @@ const adapter = new PrismaPg({
   
  
 });
-console.log(process.env.DATABASE_URL,"database_url");
+
 export const prisma = new PrismaClient({ adapter });
