@@ -36,15 +36,26 @@ export async function listPlans(req: Request, res: Response) {
 export async function match(req: Request, res: Response) {
   try {
     const FilterQuery = {
-      destination: (req.query.destination as string) || undefined,
-      startDate: (req.query.startDate as string) || undefined,
-      endDate: (req.query.endDate as string) || undefined,
-      travelType: (req.query.travelType as string) || undefined
+      destination: req.query.destination
+        ? String(req.query.destination)
+        : undefined,
+      startDate: req.query.startDate
+        ? String(req.query.startDate)
+        : undefined,
+      endDate: req.query.endDate ? String(req.query.endDate) : undefined,
+      travelType: req.query.travelType
+        ? String(req.query.travelType)
+        : undefined,
     };
+
     const matches = await travelService.matchPlans(FilterQuery);
-    res.json({ success: true, matches });
+
+    return res.json({ success: true, matches });
   } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message || "Failed" });
+    console.error("Match error:", err);
+    res
+      .status(500)
+      .json({ success: false, message: err.message || "Failed to match plans" });
   }
 }
 
