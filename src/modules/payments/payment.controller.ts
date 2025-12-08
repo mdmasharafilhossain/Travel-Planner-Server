@@ -20,7 +20,7 @@ function extractTransactionId(req: Request): string | null {
     q.transactionId, q.transactionid, q.tran_id, q.tranId, q.tranid, q.tranID,
     b.tran_id, b.tranId, b.transactionId, b.transaction_id, b.transactionid, b.transactionID
   ];
-  console.log(candidates,"Candidites..........");
+ 
 
   for (const c of candidates) {
     if (typeof c === "string" && c.trim() !== "") return c.trim();
