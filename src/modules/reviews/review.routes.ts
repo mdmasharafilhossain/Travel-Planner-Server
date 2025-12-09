@@ -17,5 +17,9 @@ router.post(
 
 // ✅ user reviews (used by profile & plan details)
 router.get("/user/:id", reviewController.getUserReviews);
+// ✅ NEW: update single review
+router.patch("/:id", requireAuth, reviewController.updateReview);
 
+// ✅ NEW: delete review
+router.delete("/:id", requireAuth, reviewController.deleteReview);
 export default router;

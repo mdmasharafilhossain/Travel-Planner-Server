@@ -35,26 +35,30 @@ export async function createReview(req: AuthRequest, res: Response) {
 // ✅ UPDATED: user reviews + avgRating + totalReviews
 export async function getUserReviews(req: any, res: Response) {
   try {
-    const list = await reviewService.getUserReviews(req.params.id);
+    const userId = req.params.id;
 
-    const totalReviews = list.length;
+    const reviews = await reviewService.getUserReviews(userId);
+
+    const totalReviews = reviews.length;
     const avgRating =
       totalReviews > 0
-        ? list.reduce((sum: number, r: any) => sum + r.rating, 0) / totalReviews
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
         : null;
 
     return res.json({
       success: true,
-      reviews: list,
+      reviews,
       totalReviews,
       avgRating,
     });
   } catch (err: any) {
-    return res
-      .status(err?.statusCode || 500)
-      .json({ success: false, message: err?.message || "Failed" });
+    return res.status(500).json({
+      success: false,
+      message: err?.message || "Failed to fetch reviews",
+    });
   }
 }
+
 export async function createReviewForTravelPlan(
   req: AuthRequest,
   res: Response
@@ -84,6 +88,56 @@ export async function createReviewForTravelPlan(
     );
 
     return res.json({ success: true, review });
+  } catch (err: any) {
+    return res
+      .status(err?.statusCode || 500)
+      .json({ success: false, message: err?.message || "Failed" });
+  }
+}
+
+// ✅ NEW: updateReview
+export async function updateReview(req: AuthRequest, res: Response) {
+  try {
+    const authorId = req.user?.id;
+    const { id } = req.params;
+    const { rating, comment } = req.body;
+
+    if (!authorId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized" });
+    }
+
+    const updated = await reviewService.updateReview(
+      id,
+      authorId,
+      rating,
+      comment
+    );
+
+    return res.json({ success: true, review: updated });
+  } catch (err: any) {
+    return res
+      .status(err?.statusCode || 500)
+      .json({ success: false, message: err?.message || "Failed" });
+  }
+}
+
+// ✅ NEW: deleteReview
+export async function deleteReview(req: AuthRequest, res: Response) {
+  try {
+    const authorId = req.user?.id;
+    const { id } = req.params;
+
+    if (!authorId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized" });
+    }
+
+    const result = await reviewService.deleteReview(id, authorId);
+
+    return res.json({ success: true, ...result });
   } catch (err: any) {
     return res
       .status(err?.statusCode || 500)
