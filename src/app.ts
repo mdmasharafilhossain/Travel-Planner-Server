@@ -66,7 +66,7 @@ app.use(cookieParser());
 // CORS
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin:[ "http://localhost:3000","https://travel-planning-client.vercel.app"],
     credentials: true,
   })
 );
