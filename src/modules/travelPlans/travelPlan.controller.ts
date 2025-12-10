@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as travelService from "./travelPlan.service";
+import { prisma } from "../../config/db";
 
 export async function createPlan(req: Request, res: Response) {
   try {
@@ -130,5 +131,43 @@ export async function respondParticipant(req: Request, res: Response) {
     res
       .status(err.statusCode || 500)
       .json({ success: false, message: err.message || "Failed" });
+  }
+}
+export async function getMyPlans(req: any, res: any) {
+  try {
+    const userId = req.user.id;
+
+    const plans = await prisma.travelPlan.findMany({
+      where: { hostId: userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json({ success: true, plans });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to load plans",
+    });
+  }
+}
+
+export async function userUpdatePlan(req: any, res: any) {
+  try {
+    const userId = req.user.id;
+    const planId = req.params.id;
+    const data = req.body;
+
+    const updated = await travelService.updatePlan(planId, userId, data);
+
+    return res.json({
+      success: true,
+      message: "Plan updated successfully",
+      plan: updated.plan,
+    });
+  } catch (err: any) {
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || "Failed to update plan",
+    });
   }
 }
