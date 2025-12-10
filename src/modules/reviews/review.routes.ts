@@ -1,6 +1,6 @@
 // src/modules/reviews/review.routes.ts
 import { Router } from "express";
-import { requireAuth } from "../../middlewares/auth";
+import { requireAdmin, requireAuth } from "../../middlewares/auth";
 import * as reviewController from "./review.controller";
 
 const router = Router();
@@ -22,4 +22,11 @@ router.patch("/:id", requireAuth, reviewController.updateReview);
 
 // ✅ NEW: delete review
 router.delete("/:id", requireAuth, reviewController.deleteReview);
+router.get("/admin/all", requireAuth,requireAdmin, reviewController.getAllReviewsHandler);
+router.delete(
+  "/admin/:id",
+  requireAuth,
+  requireAdmin,
+  reviewController.adminDeleteReviewHandler
+);
 export default router;

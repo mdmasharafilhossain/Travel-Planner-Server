@@ -144,3 +144,43 @@ export async function deleteReview(req: AuthRequest, res: Response) {
       .json({ success: false, message: err?.message || "Failed" });
   }
 }
+// ✅ ADMIN: get all reviews
+export async function getAllReviewsHandler(req: AuthRequest, res: Response) {
+  try {
+    const user = req.user;
+    if (!user || user.role !== "ADMIN") {
+      return res.status(403).json({ success: false, message: "Admin only" });
+    }
+
+    const reviews = await reviewService.getAllReviews();
+    return res.json({ success: true, reviews });
+  } catch (err: any) {
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || "Failed to fetch reviews",
+    });
+  }
+}
+
+// ✅ ADMIN: delete review
+export async function adminDeleteReviewHandler(
+  req: AuthRequest,
+  res: Response
+) {
+  try {
+    const user = req.user;
+    if (!user || user.role !== "ADMIN") {
+      return res.status(403).json({ success: false, message: "Admin only" });
+    }
+
+    const { id } = req.params;
+    const result = await reviewService.adminDeleteReview(id);
+
+    return res.json({ success: true, ...result });
+  } catch (err: any) {
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || "Failed to delete review",
+    });
+  }
+}

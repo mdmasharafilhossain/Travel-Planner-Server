@@ -155,3 +155,34 @@ export async function deleteReview(reviewId: string, authorId: string) {
 
   return { message: "Review deleted" };
 }
+
+export async function getAllReviews() {
+  return prisma.review.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      author: {
+        select: { id: true, fullName: true, email: true },
+      },
+      target: {
+        select: { id: true, fullName: true, email: true },
+      },
+    },
+  });
+}
+
+// ✅ ADMIN: delete any review
+export async function adminDeleteReview(reviewId: string) {
+  const review = await prisma.review.findUnique({
+    where: { id: reviewId },
+  });
+
+  if (!review) {
+    throw AppError.notFound("Review not found");
+  }
+
+  await prisma.review.delete({
+    where: { id: reviewId },
+  });
+
+  return { message: "Review deleted successfully" };
+}
