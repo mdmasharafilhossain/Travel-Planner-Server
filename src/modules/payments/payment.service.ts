@@ -374,8 +374,7 @@ export async function getAllTransactionHistory(opts: {
         }
       } as any
     ];
-    // Note: depending on prisma version, nested 'user.some' for single relation may not be supported.
-    // We'll handle user search below by a different approach if needed (see fallback).
+
   }
 
   // Build order
@@ -469,3 +468,20 @@ export async function getAllTransactionHistory(opts: {
   };
 }
 
+export async function getUserPaymentHistory(userId: string) {
+  return prisma.payment.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      amount: true,
+      currency: true,
+      status: true,
+      transactionId: true,
+      description: true,
+      paymentGateway: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+}

@@ -21,7 +21,7 @@ export async function addReview(authorId: string, targetId: string, rating: numb
 export async function getUserReviews(userId: string) {
   return prisma.review.findMany({
     where: {
-      targetId: userId, // hostId
+      targetId: userId, 
     },
     include: {
       author: {
