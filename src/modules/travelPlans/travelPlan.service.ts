@@ -1,6 +1,7 @@
 import { th } from "zod/v4/locales";
 import { prisma } from "../../config/db";
 import { AppError } from "../../utils/AppError";
+import { TravelType, Visibility } from "@prisma/client";
 
 export async function createPlan(hostId: string, data: any) {
   const CreateNewPlan = await prisma.travelPlan.create({
@@ -21,15 +22,46 @@ export async function createPlan(hostId: string, data: any) {
 }
 
 export async function getPlan(id: string) {
-  const searchPlan = await prisma.travelPlan.findUnique({ where: { id }, include: { host: true }});
+  const searchPlan = await prisma.travelPlan.findUnique({
+    where: { id },
+    include: {
+      host: true,
+      travelPlanParticipants: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              profileImage: true,
+            },
+          },
+        },
+      },
+    },
+  });
   if (!searchPlan) {
-throw AppError.notFound("Travel plan not found");
+    throw AppError.notFound("Travel plan not found");
   }
   return searchPlan;
 }
 
+
+// export async function listPlans(skip = 0, take = 20) {
+//   return prisma.travelPlan.findMany({ skip, take, include: { host: true }, orderBy: { startDate: 'asc' }});
+// }
 export async function listPlans(skip = 0, take = 20) {
-  return prisma.travelPlan.findMany({ skip, take, include: { host: true }, orderBy: { startDate: 'asc' }});
+  return prisma.travelPlan.findMany({
+    skip,
+    take,
+    where: {
+      visibility: Visibility.PUBLIC,      // visibility = "PUBLIC"
+      // NOT: {
+      //   travelType: TravelType.SOLO,      // travelType != "SOLO"
+      // },
+    },
+    include: { host: true },
+    orderBy: { startDate: "asc" },
+  });
 }
 
 export async function matchPlans(query: { destination?: string; startDate?: string; endDate?: string; travelType?: string }) {
@@ -89,4 +121,66 @@ export async function updatePlan(
   });
 
   return { message: "Plan updated", plan: updated };
+}
+
+
+// New Functionality
+export async function requestToJoinPlan(planId: string, userId: string) {
+  const plan = await prisma.travelPlan.findUnique({ where: { id: planId } });
+  if (!plan) throw AppError.notFound("Travel plan not found");
+
+  if (plan.hostId === userId) {
+    throw AppError.badRequest("You cannot request to join your own plan");
+  }
+
+  // check existing participant record (any status)
+  const existing = await prisma.travelPlanParticipant.findFirst({
+    where: { travelPlanId: planId, userId },
+  });
+
+  if (existing) {
+    throw AppError.badRequest(`You already have a request with status: ${existing.status}`);
+  }
+
+  const participant = await prisma.travelPlanParticipant.create({
+    data: {
+      travelPlanId: planId,
+      userId,
+      status: "PENDING",
+    },
+  });
+
+  return { message: "Join request sent", participant };
+}
+
+
+export async function respondToJoinRequest(
+  planId: string,
+  hostId: string,
+  participantId: string,
+  status: "ACCEPTED" | "REJECTED" | "CANCELLED"
+) {
+  const plan = await prisma.travelPlan.findUnique({ where: { id: planId } });
+  if (!plan) throw AppError.notFound("Travel plan not found");
+
+  if (plan.hostId !== hostId) {
+    throw AppError.forbidden("Only host can manage join requests");
+  }
+
+  const participant = await prisma.travelPlanParticipant.findUnique({
+    where: { id: participantId },
+  });
+  if (!participant || participant.travelPlanId !== planId) {
+    throw AppError.notFound("Join request not found");
+  }
+
+  const updated = await prisma.travelPlanParticipant.update({
+    where: { id: participantId },
+    data: {
+      status,
+      respondedAt: new Date(),
+    },
+  });
+
+  return { message: "Status updated", participant: updated };
 }

@@ -1,4 +1,3 @@
-// src/modules/sslCommerz/sslCommerz.service.ts
 import axios, { AxiosResponse } from "axios";
 import dotenv from "dotenv";
 import { AppError } from "../utils/AppError";

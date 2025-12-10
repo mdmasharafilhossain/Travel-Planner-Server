@@ -12,12 +12,7 @@ function generateTransactionId() {
   return `TB_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/**
- * Initiate subscription payment:
- * - creates Payment record (PENDING)
- * - calls SSLCommerz.init
- * - stores gateway response and sessionKey for future mapping
- */
+
 export async function initSubscriptionPayment(userId: string, plan: string, phoneNumber?: string) {
   const PLAN = (plan || "").toLowerCase() as Plan;
   let amount: number;
@@ -107,13 +102,7 @@ export async function initSubscriptionPayment(userId: string, plan: string, phon
   return { paymentUrl: result.GatewayPageURL, paymentId: payment.id, transactionId: payment.transactionId };
 }
 
-/**
- * Handle redirect success (robust):
- * - Accepts transactionId, tran_id, sessionkey, val_id
- * - Lookup by transactionId first, then sessionKey column
- * - If found, mark PAID (optimistic) or you can require validation with val_id
- * - If not found, returns non-fatal message and relies on IPN
- */
+
 export async function handleSubscriptionSuccess(query: Record<string, string>) {
   const txId = query.transactionId || query.tran_id || query.tranId || query.tranid || "";
   const sessionKey = query.sessionkey || query.sessionKey || query.SESSIONKEY || "";
@@ -247,12 +236,7 @@ export async function handleSubscriptionCancel(query: Record<string, string>) {
   return { success: false, message: "Payment cancelled" };
 }
 
-/**
- * IPN validation (SSLCommerz hits this):
- * - validates using SSLService
- * - updates Payment(s) by transactionId (tran_id) returned in payload
- * - sets gatewayTranId and final status
- */
+
 export async function validateIPN(payload: any) {
   const response = await SSLService.validatePayment(payload);
 
@@ -300,11 +284,9 @@ export async function validateIPN(payload: any) {
 
   return response;
 }
-// --- add near the bottom of src/modules/payments/payment.service.ts ---
 
-/**
- * Get payment + user by transactionId
- */
+
+
 export async function getPaymentStatus(transactionId: string) {
   if (!transactionId) throw AppError.badRequest("transactionId required");
 
@@ -358,7 +340,7 @@ export async function getAllTransactionHistory(opts: {
   fromDate?: string;
   toDate?: string;
   search?: string;
-  sortBy?: string;    // e.g. "createdAt"
+  sortBy?: string;    
   sortOrder?: "asc" | "desc";
 }) {
   const page = Math.max(1, Number(opts.page || 1));
@@ -392,8 +374,7 @@ export async function getAllTransactionHistory(opts: {
         }
       } as any
     ];
-    // Note: depending on prisma version, nested 'user.some' for single relation may not be supported.
-    // We'll handle user search below by a different approach if needed (see fallback).
+
   }
 
   // Build order
@@ -487,3 +468,20 @@ export async function getAllTransactionHistory(opts: {
   };
 }
 
+export async function getUserPaymentHistory(userId: string) {
+  return prisma.payment.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      amount: true,
+      currency: true,
+      status: true,
+      transactionId: true,
+      description: true,
+      paymentGateway: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+}

@@ -9,7 +9,8 @@ import {
   handleSubscriptionCancel,
   validateIPN,
   getPaymentStatus ,
-  getAllTransactionHistory
+  getAllTransactionHistory,
+  getUserPaymentHistory
 } from "./payment.service";
 function extractTransactionId(req: Request): string | null {
   const q = req.query || {};
@@ -20,7 +21,7 @@ function extractTransactionId(req: Request): string | null {
     q.transactionId, q.transactionid, q.tran_id, q.tranId, q.tranid, q.tranID,
     b.tran_id, b.tranId, b.transactionId, b.transaction_id, b.transactionid, b.transactionID
   ];
-  console.log(candidates,"Candidites..........");
+ 
 
   for (const c of candidates) {
     if (typeof c === "string" && c.trim() !== "") return c.trim();
@@ -198,3 +199,19 @@ export async function getAllTransactionsHandler(req: Request, res: Response) {
   }
 }
 
+export async function getUserTransactionsHandler(req: Request, res: Response) {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ ok: false, message: "Unauthorized" });
+    }
+
+    const transactions = await getUserPaymentHistory(userId);
+    return res.json({ ok: true, data: transactions });
+  } catch (err: any) {
+    console.error("getUserTransactionsHandler error:", err);
+    return res
+      .status(err.statusCode || 500)
+      .json({ ok: false, message: err.message || "Failed" });
+  }
+}
