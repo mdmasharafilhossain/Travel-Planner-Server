@@ -173,8 +173,8 @@ npm install -g prisma
 ### 1️⃣ Clone & Install
 
 ```bash
-git clone https://github.com/your-username/travel-planning-backend.git
-cd travel-planning-backend
+git clone https://github.com/mdmasharafilhossain/Travel-Planner-Server
+cd Travel-Planner-Server
 npm install
 ```
 
