@@ -82,7 +82,7 @@ Supports real online subscription payments.
 
 
 
-## 🧰 Tech Stack
+## Tech Stack
 
 | Category      | Technology |
 |--------------|------------|
