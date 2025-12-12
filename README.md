@@ -17,9 +17,9 @@ Built using **Node.js, Express.js, TypeScript, Prisma ORM, and PostgreSQL**, thi
 ##  Features
 
 ### Authentication & Authorization
-- Secure **JWT authentication**
-- Password hashing using **bcrypt**
-- **Cookie-based** session handling
+- Secure JWT authentication
+- Password hashing using bcrypt
+- Cookie-based session handling
 - Role-based access (`user`, `admin`)
 
 
@@ -29,7 +29,7 @@ Built using **Node.js, Express.js, TypeScript, Prisma ORM, and PostgreSQL**, thi
 - Public/Private visibility settings
 - Date validation & budget range logic
 - Participants can request to join trips
-- Host can **accept / reject / cancel** requests
+- Host can accept / reject / cancel requests
 - Dynamic dashboard showing:
   - Hosted trips
   - Joined trips
