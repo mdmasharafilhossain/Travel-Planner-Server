@@ -63,13 +63,13 @@ export const errorHandler = (
     error = new AppError('Invalid data provided', 400);
   }
 
-  // Mongoose duplicate key
+
   if ((err as any).code === 11000) {
     const message = 'Duplicate field value entered';
     error = new AppError(message, 400);
   }
 
-  // Mongoose validation error
+
   if (err.name === 'ValidationError') {
     const message = Object.values((err as any).errors)
       .map((val: any) => val.message)
@@ -77,7 +77,7 @@ export const errorHandler = (
     error = new AppError(message, 400);
   }
 
-  // JWT errors
+ 
   if (err.name === 'JsonWebTokenError') {
     error = new AppError('Invalid token', 401);
   }
@@ -86,7 +86,6 @@ export const errorHandler = (
     error = new AppError('Token expired', 401);
   }
 
-  // CastError (invalid ObjectId)
   if (err.name === 'CastError') {
     const message = 'Resource not found';
     error = new AppError(message, 404);

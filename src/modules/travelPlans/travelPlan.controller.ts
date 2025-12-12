@@ -111,7 +111,7 @@ export async function respondParticipant(req: Request, res: Response) {
     }
 
     const { planId, participantId } = req.params;
-    const { status } = req.body; // ACCEPTED | REJECTED | CANCELLED
+    const { status } = req.body; 
 
     if (!["ACCEPTED", "REJECTED", "CANCELLED"].includes(status)) {
       return res

@@ -75,7 +75,7 @@ export const createPlanSchema = z
   .partial()
   .refine(
     (data) => {
-      // Only validate date order if both provided in update
+      
       if (data.startDate && data.endDate) {
         const start = new Date(data.startDate);
         const end = new Date(data.endDate);

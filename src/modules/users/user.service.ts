@@ -53,7 +53,7 @@ export async function getMe(id: string) {
 
 
 
-// New Functionality 
+
 export async function deleteUser(id: string) {
   const user = await userModel.findById(id);
   if (!user) throw AppError.notFound("User not found");

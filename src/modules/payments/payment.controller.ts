@@ -74,7 +74,7 @@ export async function successHandler(req: Request, res: Response) {
   }
 }
 
-// FAIL
+
 export async function failHandler(req: Request, res: Response) {
   try {
     const tx = extractTransactionId(req);
@@ -101,7 +101,7 @@ export async function failHandler(req: Request, res: Response) {
   }
 }
 
-// CANCEL
+
 export async function cancelHandler(req: Request, res: Response) {
   try {
     const tx = extractTransactionId(req);

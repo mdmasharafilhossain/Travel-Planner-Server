@@ -80,7 +80,7 @@ export async function initSubscriptionPayment(userId: string, plan: string, phon
     throw AppError.internalError("Failed to initiate payment with SSLCommerz");
   }
 
-  // Ensure we persist gateway response and sessionKey into payment record
+
   const sessionKey = result?.sessionkey || result?.SESSIONKEY || null;
   await prisma.payment.update({
     where: { id: payment.id },
@@ -108,18 +108,17 @@ export async function handleSubscriptionSuccess(query: Record<string, string>) {
   const sessionKey = query.sessionkey || query.sessionKey || query.SESSIONKEY || "";
   const valId = query.val_id || query.valId || "";
 
-  // Try find payment by transactionId first
+
   let payment = null;
   if (txId) {
     payment = await prisma.payment.findUnique({ where: { transactionId: txId } });
   }
 
-  // If not found and we have a sessionKey, try by sessionKey column
+
   if (!payment && sessionKey) {
     payment = await prisma.payment.findFirst({ where: { sessionKey: sessionKey } });
   }
 
-  // If not found, try to match sessionKey inside paymentGatewayData as a fallback
   if (!payment && sessionKey) {
     const candidates = await prisma.payment.findMany({
       where: { paymentGateway: "sslcommerz" },
@@ -141,8 +140,7 @@ export async function handleSubscriptionSuccess(query: Record<string, string>) {
     return { success: true, message: "Already processed", payment };
   }
 
-  // Optional: if valId present, you may call SSLService.validatePayment({ val_id: valId }) to confirm before updating.
-  // For now we perform an optimistic update (safe if you rely on IPN as authoritative).
+ 
   const desc = payment.description ?? "";
   let plan: Plan = "monthly";
   if (desc.includes("subscription:yearly")) plan = "yearly";
@@ -197,7 +195,7 @@ export async function handleSubscriptionFail(query: Record<string, string>) {
   const txId = query.transactionId || query.tran_id || query.tranId || query.tranid || "";
   const sessionKey = query.sessionkey || query.sessionKey || "";
 
-  // Update best-effort using txId or sessionKey
+
   if (txId) {
     await prisma.payment.updateMany({
       where: { transactionId: txId },
@@ -361,11 +359,11 @@ export async function getAllTransactionHistory(opts: {
     if (opts.toDate) where.createdAt.lte = new Date(opts.toDate);
   }
   if (opts.search) {
-    // search by transactionId or description or user's email (requires relational filter)
+    
     where.OR = [
       { transactionId: { contains: opts.search, mode: "insensitive" } },
       { description: { contains: opts.search, mode: "insensitive" } },
-      // searching user email requires nested condition using some Prisma syntax:
+ 
       {
         user: {
           some: {
@@ -377,20 +375,20 @@ export async function getAllTransactionHistory(opts: {
 
   }
 
-  // Build order
+
   const orderBy = {};
   const sortBy = opts.sortBy || "createdAt";
   const sortOrder = opts.sortOrder || "desc";
   (orderBy as any)[sortBy] = sortOrder;
 
-  // If search includes user email and Prisma can't use 'user.some' for relation, fallback:
+
   let payments: any[] = [];
   let total = 0;
 
-  // Try primary query first (search excluding user.email)
+
   const wherePrimary = { ...where };
   if (wherePrimary.OR) {
-    // remove the user.some entry if present (Prisma single relation can't use some)
+
     wherePrimary.OR = wherePrimary.OR.filter((clause: any) => {
       const keys = Object.keys(clause || {});
       if (keys.length === 1 && keys[0] === "user") return false;
@@ -411,10 +409,9 @@ export async function getAllTransactionHistory(opts: {
     take: limit
   });
 
-  // If the user requested search and total is low / or they searched by user email,
-  // attempt a second fetch by finding matching userIds and including them.
+
   if (opts.search) {
-    // find users matching the search term
+
     const matchedUsers = await prisma.user.findMany({
       where: {
         OR: [
@@ -427,7 +424,7 @@ export async function getAllTransactionHistory(opts: {
 
     if (matchedUsers.length > 0) {
       const userIds = matchedUsers.map((u) => u.id);
-      // merge where conditions to include these userIds
+     
       const whereWithUsers = { ...wherePrimary, OR: [{ userId: { in: userIds } }, ...(wherePrimary.OR || [])] };
 
       total = await prisma.payment.count({ where: whereWithUsers });

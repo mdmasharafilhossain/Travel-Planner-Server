@@ -46,7 +46,7 @@ model User {
   role             Role     @default(USER)
   paymentStatus    PaymentStatus @default(UNPAID)
   isPremium        Boolean  @default(false)
-  premiumExpiresAt DateTime?         // optional expiry timestamp
+  premiumExpiresAt DateTime?         
   isVerifiedBadge  Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -94,20 +94,7 @@ model Review {
   createdAt DateTime @default(now())
 }
 
-// model Payment {
-//   id                 String        @id @default(cuid())
-//   userId             String
-//   user               User          @relation(fields: [userId], references: [id])
-//   amount             Int           
-//   currency           String        @default("bdt")
-//   status             PaymentStatus @default(PENDING)
-//   paymentGateway     String?      
-//   transactionId      String?        @unique
-//   paymentGatewayData Json?         
-//   description        String?
-//   createdAt          DateTime      @default(now())
-//   updatedAt          DateTime      @updatedAt
-// }
+
 model Payment {
   id                 String        @id @default(cuid())
   userId             String
@@ -117,8 +104,8 @@ model Payment {
   status             PaymentStatus @default(PENDING)
   paymentGateway     String?
   transactionId      String?       @unique
-  sessionKey         String?       // <--- added
-  gatewayTranId      String?       // <--- optional: gateway's tran_id after validation
+  sessionKey         String?       
+  gatewayTranId      String?       
   paymentGatewayData Json?
   description        String?
   createdAt          DateTime      @default(now())
@@ -130,7 +117,7 @@ model TravelPlanParticipant {
   travelPlan   TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
   userId       String
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status       String     @default("PENDING") // PENDING | ACCEPTED | REJECTED | CANCELLED
+  status       String     @default("PENDING") 
   requestedAt  DateTime   @default(now())
   respondedAt  DateTime?
 

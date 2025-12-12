@@ -32,7 +32,7 @@ export async function createReview(req: AuthRequest, res: Response) {
   }
 }
 
-// ✅ UPDATED: user reviews + avgRating + totalReviews
+
 export async function getUserReviews(req: any, res: Response) {
   try {
     const userId = req.params.id;
@@ -95,7 +95,6 @@ export async function createReviewForTravelPlan(
   }
 }
 
-// ✅ NEW: updateReview
 export async function updateReview(req: AuthRequest, res: Response) {
   try {
     const authorId = req.user?.id;
@@ -123,7 +122,7 @@ export async function updateReview(req: AuthRequest, res: Response) {
   }
 }
 
-// ✅ NEW: deleteReview
+
 export async function deleteReview(req: AuthRequest, res: Response) {
   try {
     const authorId = req.user?.id;
@@ -144,7 +143,7 @@ export async function deleteReview(req: AuthRequest, res: Response) {
       .json({ success: false, message: err?.message || "Failed" });
   }
 }
-// ✅ ADMIN: get all reviews
+
 export async function getAllReviewsHandler(req: AuthRequest, res: Response) {
   try {
     const user = req.user;
@@ -162,7 +161,7 @@ export async function getAllReviewsHandler(req: AuthRequest, res: Response) {
   }
 }
 
-// ✅ ADMIN: delete review
+
 export async function adminDeleteReviewHandler(
   req: AuthRequest,
   res: Response

@@ -68,7 +68,7 @@ export const SSLService = {
         params.append(k, v === undefined || v === null ? "" : String(v));
       });
 
-      // send request
+    
       let response: AxiosResponse<any>;
       try {
         response = await axios.post(PAYMENT_API, params.toString(), {
@@ -76,7 +76,7 @@ export const SSLService = {
           timeout: 20000
         });
       } catch (err: any) {
-        // network / non-2xx error
+       
         const r = err?.response;
         console.error("[sslCommerz] HTTP request failed:", {
           url: PAYMENT_API,
@@ -84,39 +84,38 @@ export const SSLService = {
           data: r?.data,
           message: err.message
         });
-        // bubble up a helpful AppError that includes status and body when possible
+       
         const msg = r?.data ? `SSLCommerz returned HTTP ${r.status}` : `Network error: ${err.message}`;
         throw AppError.internalError(msg);
       }
 
-      // debug log full response for troubleshooting
+
       console.info("[sslCommerz] init response status:", response.status);
-      console.debug("[sslCommerz] init response data:", JSON.stringify(response.data).slice(0, 2000)); // trim to avoid huge logs
+      console.debug("[sslCommerz] init response data:", JSON.stringify(response.data).slice(0, 2000)); 
 
       if (!response.data) {
         throw AppError.internalError("Empty response from SSLCommerz payment API");
       }
 
-      // Common successful response contains GatewayPageURL
+    
       if (response.data?.GatewayPageURL) {
         return response.data;
       }
 
-      // Some sandbox responses wrap differently — return raw data but also surface reason
-      // If response.data has an error message, include it
+    
       const possibleMsg = response.data?.failedreason || response.data?.failed_reason || response.data?.message || null;
       if (possibleMsg) {
         console.error("[sslCommerz] init failed reason:", possibleMsg);
-        // still return data so caller can store it
+    
         return response.data;
       }
 
-      // default: return raw response (caller will check GatewayPageURL)
+    
       return response.data;
     } catch (error: any) {
       const errInfo = error?.message || error;
       console.error("[sslCommerz] sslPaymentInit error (final):", errInfo);
-      // If error is already AppError, rethrow it
+     
       if (error?.isOperational && error?.statusCode) throw error;
       throw AppError.internalError("SSLCommerz payment initialization failed");
     }
@@ -125,7 +124,7 @@ export const SSLService = {
   validatePayment: async (payload: Record<string, any>): Promise<any> => {
     const STORE_ID = getEnv("SSL_STORE_ID");
     const STORE_PASS = getEnv("SSL_STORE_PASS");
-    const VALIDATE_API = getEnv("SSL_VALIDATION_API"); // e.g. https://sandbox.sslcommerz.com/validator/api/validationserverAPI.php
+    const VALIDATE_API = getEnv("SSL_VALIDATION_API"); 
 
     if (!STORE_ID || !STORE_PASS || !VALIDATE_API) {
       throw AppError.internalError("SSLCommerz validation environment variables missing (SSL_STORE_ID/SSL_STORE_PASS/SSL_VALIDATION_API).");

@@ -1,4 +1,4 @@
-// src/modules/reviews/review.routes.ts
+
 import { Router } from "express";
 import { requireAdmin, requireAuth } from "../../middlewares/auth";
 import * as reviewController from "./review.controller";
