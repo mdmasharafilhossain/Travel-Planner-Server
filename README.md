@@ -1,4 +1,4 @@
-# Travel Planning Backend API
+# Travel Planner Backend API
 
 A scalable, modular, and production-ready backend for a **Travel Planning & Travel Buddy Matching Platform**.
 
