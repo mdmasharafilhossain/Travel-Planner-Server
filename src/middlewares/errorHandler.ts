@@ -29,13 +29,13 @@ export const errorHandler = (
     params: req.params
   });
 
-  // Zod validation error handle
+  
   if (err instanceof ZodError) {
     const formattedErrors = err.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
     error = new AppError(formattedErrors || 'Validation failed', 400);
   }
 
-  // Prisma Known Errors
+ 
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     switch (err.code) {
       case 'P2002':
@@ -53,12 +53,12 @@ export const errorHandler = (
     }
   }
 
-  // Prisma Unknown Errors
+
   if (err instanceof Prisma.PrismaClientUnknownRequestError) {
     error = new AppError('Database connection error', 503);
   }
 
-  // Prisma Validation Errors
+ 
   if (err instanceof Prisma.PrismaClientValidationError) {
     error = new AppError('Invalid data provided', 400);
   }

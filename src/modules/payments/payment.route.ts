@@ -16,7 +16,7 @@ const router = Router();
 
 router.post("/init-subscription", requireAuth, initSubscriptionHandler);
 
-// allow both GET & POST for redirect endpoints (gateway may use either)
+
 router.get("/success", successHandler);
 router.post("/success", express.urlencoded({ extended: true }), successHandler);
 

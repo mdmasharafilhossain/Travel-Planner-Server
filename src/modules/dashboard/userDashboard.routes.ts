@@ -4,7 +4,7 @@ import * as userDashboardController from "./userDashboard.controller";
 
 const router = Router();
 
-// User dashboard data
+
 router.get("/user", requireAuth, userDashboardController.getUserDashboard);
 
 export default router;

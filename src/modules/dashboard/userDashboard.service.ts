@@ -3,7 +3,7 @@ import { prisma } from "../../config/db";
 export async function getUserDashboard(userId: string) {
   const now = new Date();
 
-  // 1) Hosted plans
+
   const hostedPlans = await prisma.travelPlan.findMany({
     where: { hostId: userId },
     include: {
@@ -19,7 +19,7 @@ export async function getUserDashboard(userId: string) {
     orderBy: { startDate: "asc" },
   });
 
-  // 2) Joined (ACCEPTED) plans as participant
+
   const joinedParticipants = await prisma.travelPlanParticipant.findMany({
     where: { userId, status: "ACCEPTED" },
     include: {
@@ -41,7 +41,7 @@ export async function getUserDashboard(userId: string) {
 
   const joinedPlans = joinedParticipants.map(p => p.travelPlan);
 
-  // upcoming plans (hosted + joined) for matching
+ 
   const planMap = new Map<string, any>();
   for (const p of hostedPlans) {
     if (p.startDate >= now) {
@@ -55,7 +55,7 @@ export async function getUserDashboard(userId: string) {
   }
   const upcomingPlans = Array.from(planMap.values());
 
-  // 3) Matched travelers per upcoming plan
+
   const matchesByPlan: Record<string, any[]> = {};
   for (const plan of upcomingPlans) {
     const matches = await prisma.travelPlan.findMany({
@@ -84,8 +84,7 @@ export async function getUserDashboard(userId: string) {
     matchesByPlan[plan.id] = matches;
   }
 
-  // 4) Reviewable trips:
-  // joined & ACCEPTED & trip ended & user has NOT reviewed this host yet
+
   const finishedJoined = joinedPlans.filter(p => p.endDate < now);
 
   const hostIds = Array.from(new Set(finishedJoined.map(p => p.hostId)));

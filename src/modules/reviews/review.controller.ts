@@ -1,4 +1,4 @@
-// src/modules/reviews/review.controller.ts
+
 import { Response } from "express";
 import { AuthRequest } from "../../middlewares/auth";
 import * as reviewService from "./review.service";

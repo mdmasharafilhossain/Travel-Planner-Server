@@ -1,4 +1,4 @@
-// src/modules/payments/payment.service.ts
+
 import dotenv from "dotenv";
 dotenv.config();
 

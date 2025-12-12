@@ -102,7 +102,7 @@ export async function requestToJoin(req: Request, res: Response) {
   }
 }
 
-// 👇 NEW: host accept/reject/cancel
+
 export async function respondParticipant(req: Request, res: Response) {
   try {
     const hostId = (req as any).user?.id;

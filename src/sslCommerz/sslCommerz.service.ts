@@ -1,25 +1,11 @@
 import axios, { AxiosResponse } from "axios";
 import dotenv from "dotenv";
 import { AppError } from "../utils/AppError";
+import { ISSLInitPayload } from "../types";
 
 dotenv.config();
 
-export interface ISSLInitPayload {
-  name: string;
-  email: string;
-  phoneNumber: string;
-  address?: string;
-  amount: number;
-  transactionId: string;
-  productName?: string;
-  productCategory?: string;
-  productProfile?: string;
-  city?: string;
-  state?: string;
-  postcode?: string | number;
-  country?: string;
-  fax?: string;
-}
+
 
 type TSSLInitResponse = any;
 
@@ -33,10 +19,10 @@ const getEnv = (k: string) => {
 
 export const SSLService = {
   sslPaymentInit: async (payload: ISSLInitPayload): Promise<TSSLInitResponse> => {
-    // validate critical envs early
+   
     const STORE_ID = getEnv("SSL_STORE_ID");
     const STORE_PASS = getEnv("SSL_STORE_PASS");
-    const PAYMENT_API = getEnv("SSL_PAYMENT_API"); // e.g. https://sandbox.sslcommerz.com/gwprocess/v4/api.php
+    const PAYMENT_API = getEnv("SSL_PAYMENT_API"); 
 
     if (!STORE_ID || !STORE_PASS || !PAYMENT_API) {
       throw AppError.internalError("SSLCommerz environment variables are not configured (SSL_STORE_ID/SSL_STORE_PASS/SSL_PAYMENT_API).");

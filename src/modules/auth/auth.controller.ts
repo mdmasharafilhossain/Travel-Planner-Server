@@ -29,13 +29,10 @@ export async function login(req: Request, res: Response) {
   }
 }
 
-// export async function logout(req: Request, res: Response) {
-//   res.clearCookie(process.env.COOKIE_NAME || "tb_access", { httpOnly: true });
-//   res.json({ success: true, message: "Logged out" });
-// }
+
 export async function logout(req: Request, res: Response) {
   const cookieName = process.env.COOKIE_NAME || "tb_access";
-  // Use the same options used to set the cookie (but don't include maxAge)
+  
   const clearOptions = { ...cookieOptions };
   delete (clearOptions as any).maxAge;
   res.clearCookie(cookieName, clearOptions);

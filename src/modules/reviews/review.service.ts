@@ -1,5 +1,4 @@
-// import { prisma } from "../../config/db";
-// import { AppError } from "../../utils/AppError";
+
 
 import { prisma } from "../../config/db";
 import { AppError } from "../../utils/AppError";
@@ -58,7 +57,7 @@ export async function createReviewForPlan(
     throw AppError.badRequest("You can only review after the trip is completed");
   }
 
-  // 🔐 শুধু ACCEPTED participant-রা review দিতে পারবে
+
   const participant = await prisma.travelPlanParticipant.findFirst({
     where: {
       travelPlanId,
@@ -104,7 +103,7 @@ export async function createReviewForPlan(
 }
 
 
-// New Function
+
 export async function updateReview(
   reviewId: string,
   authorId: string,
@@ -142,7 +141,7 @@ export async function updateReview(
   return updated;
 }
 
-// ✅ NEW: Delete review
+
 export async function deleteReview(reviewId: string, authorId: string) {
   const review = await prisma.review.findUnique({ where: { id: reviewId } });
   if (!review) throw AppError.notFound("Review not found");
@@ -170,7 +169,7 @@ export async function getAllReviews() {
   });
 }
 
-// ✅ ADMIN: delete any review
+
 export async function adminDeleteReview(reviewId: string) {
   const review = await prisma.review.findUnique({
     where: { id: reviewId },

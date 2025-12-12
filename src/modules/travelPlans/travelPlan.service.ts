@@ -46,18 +46,14 @@ export async function getPlan(id: string) {
 }
 
 
-// export async function listPlans(skip = 0, take = 20) {
-//   return prisma.travelPlan.findMany({ skip, take, include: { host: true }, orderBy: { startDate: 'asc' }});
-// }
 export async function listPlans(skip = 0, take = 20) {
   return prisma.travelPlan.findMany({
     skip,
     take,
     where: {
-      visibility: Visibility.PUBLIC,      // visibility = "PUBLIC"
-      // NOT: {
-      //   travelType: TravelType.SOLO,      // travelType != "SOLO"
-      // },
+      visibility: Visibility.PUBLIC,      
+      
+     
     },
     include: { host: true },
     orderBy: { startDate: "asc" },
@@ -89,7 +85,7 @@ export async function deletePlan(id: string, userId: string, isAdmin = false) {
 }
 
 
-// New Functionality
+
 export async function updatePlan(
   id: string,
   userId: string,
@@ -124,7 +120,7 @@ export async function updatePlan(
 }
 
 
-// New Functionality
+
 export async function requestToJoinPlan(planId: string, userId: string) {
   const plan = await prisma.travelPlan.findUnique({ where: { id: planId } });
   if (!plan) throw AppError.notFound("Travel plan not found");
@@ -133,7 +129,7 @@ export async function requestToJoinPlan(planId: string, userId: string) {
     throw AppError.badRequest("You cannot request to join your own plan");
   }
 
-  // check existing participant record (any status)
+  
   const existing = await prisma.travelPlanParticipant.findFirst({
     where: { travelPlanId: planId, userId },
   });

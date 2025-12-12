@@ -2,7 +2,7 @@
 import { Server } from "http";
 import mongoose from "mongoose";
 
-// import { envVars } from "./app/config/env";
+
 import dotenv from "dotenv";
 import { prisma } from "./config/db";
 import app from "./app";
@@ -26,9 +26,7 @@ async function connectToDB() {
 const startServer = async () => {
     try {
           await connectToDB()
-        // await mongoose.connect(process.env.DB_URL!)
-
-        // console.log("Successfully Connected to MongoDB!!");
+       
 
         server = app.listen(process.env.PORT, () => {
             console.log(`Server is listening to port ${process.env.PORT}`);

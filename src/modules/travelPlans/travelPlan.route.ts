@@ -13,7 +13,7 @@ router.get("/my", requireAuth, travelController.getMyPlans);
 router.get("/match", travelController.match);
 router.post("/:id/join", requireAuth, travelController.requestToJoin);
 
-// ✅ host respond (accept/reject/cancel)
+
 router.patch(
   "/:planId/participants/:participantId",
   requireAuth,

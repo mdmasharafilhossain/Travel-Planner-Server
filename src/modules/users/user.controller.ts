@@ -68,7 +68,7 @@ export async function getMe(req: AuthRequest, res: Response) {
 }
 
 
-// New Functionality
+
 
 
 export async function deleteUser(req: Request, res: Response) {

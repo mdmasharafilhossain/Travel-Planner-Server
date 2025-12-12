@@ -46,13 +46,13 @@ export async function initSubscriptionHandler(req: Request, res: Response) {
 }
 export async function successHandler(req: Request, res: Response) {
   try {
-    // extract tx id (robust)
+   
     const tx = extractTransactionId(req);
 
     if (!tx) {
-      // debug output — very useful to see what gateway actually sent
+     
       console.warn("[payments] /success missing transactionId. query:", req.query, "body:", req.body);
-      // respond with human-readable page instead of JSON to avoid browser confusion
+     
       return res.status(400).send("<h3>Missing transactionId in gateway return. Check server logs.</h3>");
     }
 
@@ -128,14 +128,14 @@ export async function cancelHandler(req: Request, res: Response) {
   }
 }
 
-// IPN validate route
+
 export async function validatePaymentHandler(req: Request, res: Response) {
   try {
-    // SSLCommerz IPN uses form URL encoded body
+
     const payload = req.body || {};
     console.info("[payments] /validate-payment ipn received:", JSON.stringify(payload).slice(0,2000));
     const out = await validateIPN(payload);
-    // respond 200 OK (gateway expects 200)
+  
     return res.status(200).json({ ok: true, data: out });
   } catch (err: any) {
     console.error("validatePaymentHandler error:", err);
@@ -143,7 +143,7 @@ export async function validatePaymentHandler(req: Request, res: Response) {
   }
 }
 
-// Optional: status endpoint for front-end polling
+
 export async function getPaymentStatusHandler(req: Request, res: Response) {
   try {
     const { transactionId } = req.params;
@@ -155,18 +155,11 @@ export async function getPaymentStatusHandler(req: Request, res: Response) {
     return res.status(err.statusCode || 500).json({ ok: false, message: err.message || "Failed to get status" });
   }
 }
-// add imports at top if not present
-// import { Request, Response } from "express";
-// import { getAllTransactionHistory, getPaymentStatus } from "./payment.service"; // service functions added
 
-// Admin-only: get all transactions with filters
 export async function getAllTransactionsHandler(req: Request, res: Response) {
   try {
     const authUser = (req as any).user;
-    // if (!authUser) return res.status(401).json({ ok: false, message: "Authentication required" });
-    // if (authUser.role !== "ADMIN" && authUser.role !== "admin") {
-    //   return res.status(403).json({ ok: false, message: "Admin privileges required" });
-    // }
+   
 
     const {
       page,
