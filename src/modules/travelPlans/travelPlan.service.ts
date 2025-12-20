@@ -180,3 +180,58 @@ export async function respondToJoinRequest(
 
   return { message: "Status updated", participant: updated };
 }
+export async function listPlansWithPagination(query: {
+  page?: number;
+  limit?: number;
+  destination?: string;
+  travelType?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  const page = Math.max(1, Number(query.page || 1));
+  const limit = Math.min(20, Number(query.limit || 6));
+  const skip = (page - 1) * limit;
+
+  const where: any = {
+    visibility: "PUBLIC",
+  };
+
+  if (query.destination) {
+    where.destination = {
+      contains: query.destination,
+      mode: "insensitive",
+    };
+  }
+
+  if (query.travelType) {
+    where.travelType = query.travelType;
+  }
+
+  if (query.startDate && query.endDate) {
+    where.AND = [
+      { startDate: { lte: new Date(query.endDate) } },
+      { endDate: { gte: new Date(query.startDate) } },
+    ];
+  }
+
+  const [plans, total] = await Promise.all([
+    prisma.travelPlan.findMany({
+      where,
+      skip,
+      take: limit,
+      include: { host: true },
+      orderBy: { startDate: "asc" },
+    }),
+    prisma.travelPlan.count({ where }),
+  ]);
+
+  return {
+    data: plans,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}

@@ -23,16 +23,33 @@ export async function getPlan(req: Request, res: Response) {
   }
 }
 
+// export async function listPlans(req: Request, res: Response) {
+//   try {
+//     const take = Number(req.query.take) || 20;
+//     const skip = Number(req.query.skip) || 0;
+//     const plans = await travelService.listPlans(skip, take);
+//     res.json({ success: true, plans });
+//   } catch (err: any) {
+//     res.status(500).json({ success: false, message: err.message || "Failed" });
+//   }
+// }
 export async function listPlans(req: Request, res: Response) {
   try {
-    const take = Number(req.query.take) || 20;
-    const skip = Number(req.query.skip) || 0;
-    const plans = await travelService.listPlans(skip, take);
-    res.json({ success: true, plans });
+    const result = await travelService.listPlansWithPagination({
+      page: Number(req.query.page),
+      limit: Number(req.query.limit),
+      destination: req.query.destination as string,
+      travelType: req.query.travelType as string,
+      startDate: req.query.startDate as string,
+      endDate: req.query.endDate as string,
+    });
+
+    res.json({ success: true, ...result });
   } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message || "Failed" });
+    res.status(500).json({ success: false, message: err.message });
   }
 }
+
 
 export async function match(req: Request, res: Response) {
   try {
