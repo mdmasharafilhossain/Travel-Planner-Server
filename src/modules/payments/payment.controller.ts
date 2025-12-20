@@ -34,10 +34,10 @@ export async function initSubscriptionHandler(req: Request, res: Response) {
     const userId = (req as any).user?.id;
     if (!userId) return res.status(401).json({ ok: false, message: "Authentication required" });
 
-    const { plan, phone } = req.body;
+    const { plan, phone,coupon  } = req.body;
     if (!plan) return res.status(400).json({ ok: false, message: "Plan required" });
 
-    const result = await initSubscriptionPayment(userId, plan, phone);
+    const result = await initSubscriptionPayment(userId, plan, phone,coupon );
     return res.status(201).json({ ok: true, data: result });
   } catch (err: any) {
     console.error("initSubscriptionHandler error:", err);
