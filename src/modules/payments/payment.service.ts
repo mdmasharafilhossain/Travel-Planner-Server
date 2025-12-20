@@ -5,6 +5,7 @@ dotenv.config();
 import { AppError } from "../../utils/AppError";
 import { prisma } from "../../config/db";
 import SSLService from "../../sslCommerz/sslCommerz.service";
+import { applyCoupon } from "../../utils/cupon";
 
 type Plan = "monthly" | "yearly" | "verified_badge";
 
@@ -13,28 +14,29 @@ function generateTransactionId() {
 }
 
 
-export async function initSubscriptionPayment(userId: string, plan: string, phoneNumber?: string) {
+export async function initSubscriptionPayment(userId: string, plan: string, phoneNumber?: string,coupon?: string) {
   const PLAN = (plan || "").toLowerCase() as Plan;
   let amount: number;
   if (PLAN === "monthly") amount = Number(process.env.PRICE_MONTHLY || 0);
   else if (PLAN === "yearly") amount = Number(process.env.PRICE_YEARLY || 0);
   else if (PLAN === "verified_badge") amount = Number(process.env.PRICE_VERIFIED_BADGE || 0);
   else throw AppError.badRequest("Invalid plan");
-
+const { amount: finalAmount, discount } = applyCoupon(amount, coupon);
   if (!amount || amount <= 0) throw AppError.badRequest("Invalid amount for the selected plan");
 
   const transactionId = generateTransactionId();
   const payment = await prisma.payment.create({
-    data: {
-      userId,
-      amount: Math.round(amount),
-      currency: "bdt",
-      status: "PENDING",
-      paymentGateway: "sslcommerz",
-      transactionId,
-      description: `subscription:${PLAN}`
-    }
-  });
+  data: {
+    userId,
+    amount: finalAmount,
+    currency: "bdt",
+    status: "PENDING",
+    paymentGateway: "sslcommerz",
+    transactionId,
+    description: `subscription:${PLAN}${coupon ? ` | coupon:${coupon} | discount:${discount}` : ""}`,
+  }
+});
+
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) {
