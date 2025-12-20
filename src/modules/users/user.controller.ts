@@ -26,16 +26,39 @@ export async function updateProfile(req: Request, res: Response) {
   }
 }
 
+// export async function list(req: Request, res: Response) {
+//   try {
+//     const take = Number(req.query.take) || 20;
+//     const skip = Number(req.query.skip) || 0;
+//     const users = await userService.listUsers(take, skip);
+//     res.json({ success: true, users });
+//   } catch (err: any) {
+//     res.status(500).json({ success: false, message: err.message || "Failed" });
+//   }
+// }
 export async function list(req: Request, res: Response) {
   try {
-    const take = Number(req.query.take) || 20;
-    const skip = Number(req.query.skip) || 0;
-    const users = await userService.listUsers(take, skip);
-    res.json({ success: true, users });
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const { users, total } = await userService.listUsers(limit, skip);
+
+    res.json({
+      success: true,
+      users,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message || "Failed" });
   }
 }
+
 
 export async function changePassword(req: Request, res: Response) {
   try {

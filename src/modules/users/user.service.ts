@@ -18,14 +18,30 @@ export async function updateUser(id: string, data: any) {
   return updated;
 }
 
-export async function listUsers(take = 20, skip = 0) {
-  const users = await userModel.list(take, skip);
-  return users.map(u => {
-    // @ts-ignore
-    delete u.password;
-    return u;
-  });
+// export async function listUsers(take = 20, skip = 0) {
+//   const users = await userModel.list(take, skip);
+//   return users.map(u => {
+//     // @ts-ignore
+//     delete u.password;
+//     return u;
+//   });
+// }
+export async function listUsers(take = 10, skip = 0) {
+  const [users, total] = await Promise.all([
+    userModel.list(take, skip),
+    userModel.count(),
+  ]);
+
+  return {
+    users: users.map(u => {
+      // @ts-ignore
+      delete u.password;
+      return u;
+    }),
+    total,
+  };
 }
+
 
 export async function changePassword(id: string, oldPassword: string, newPassword: string) {
   const user = await userModel.findById(id);
