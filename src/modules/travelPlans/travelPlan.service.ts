@@ -220,7 +220,7 @@ export async function listPlansWithPagination(query: {
       skip,
       take: limit,
       include: { host: true },
-      orderBy: { startDate: "asc" },
+      orderBy: { startDate: "desc" },
     }),
     prisma.travelPlan.count({ where }),
   ]);
